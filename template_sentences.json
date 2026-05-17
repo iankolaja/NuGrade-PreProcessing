@@ -1,0 +1,146 @@
+{
+    "background_treatment": {
+        "sentences": [
+            "background contribution was measured and subtracted",
+            "background was determined using beam-off measurements",
+            "ambient and room background were corrected",
+            "background spectrum was modeled and removed",
+            "random background events were accounted for"
+        ],
+        "keywords": [
+            "background",
+            "background subtraction",
+            "background subtracted",
+            "beam-off",
+            "target-out",
+            "target out",
+            "target-in",
+            "target in"
+        ]
+    },
+    "detector_efficiency": {
+        "sentences": [
+            "detector efficiency was determined using calibration sources",
+            "efficiency correction was applied to measured yields",
+            "detector response was simulated using Monte Carlo",
+            "absolute efficiency curve was obtained",
+            "efficiency uncertainty was included in the analysis"
+        ],
+        "keywords": [
+            "efficiency",
+            "calibration",
+            "detector",
+            "response"
+        ]
+    },
+    "normalization_treatment": {
+        "sentences": [
+            "data were normalized to a reference cross section",
+            "normalization was performed using monitor reactions",
+            "yields were normalized to beam current measurements",
+            "absolute normalization factor was determined",
+            "monitor reaction was used for normalization",
+            "neutron flux was determined using monitor detectors",
+            "beam intensity was measured and used for normalization"
+        ],
+        "keywords": [
+            "normalization",
+            "normalized",
+            "absolute normalization",
+            "monitor reaction",
+            "monitor detector",
+            "reference cross section",
+            "standard",
+            "h(n,n)"
+        ]
+    },
+    "sample_attenuation_scattering_corrections": {
+        "sentences": [
+            "self-shielding correction was applied",
+            "attenuation effects in the sample were corrected",
+            "neutron self-shielding was accounted for",
+            "geometrical efficiency was taken into account",
+            "sample thickness effects were corrected",
+            "solid angle correction was applied",
+            "detector-sample geometry was modeled"
+        ],
+        "keywords": [
+            "self-shielding",
+            "geometry",
+            "geometrical",
+            "solid angle",
+            "sample size",
+            "finite-size",
+            "attenuation",
+            "multiple scattering"
+        ]
+    },
+    "dead_time": {
+        "sentences": [
+            "dead time correction was applied",
+            "pile-up effects were corrected",
+            "detector dead time was accounted for",
+            "electronics response corrections were included"
+        ],
+        "keywords": [
+            "dead time",
+            "dead-time",
+            "pile-up",
+            "pileup",
+            "electronics response"
+        ]
+    },
+    "coincidence": {
+        "sentences": [
+            "random coincidences were subtracted",
+            "coincidence efficiency was evaluated",
+            "coincidence counting technique was used"
+        ],
+        "keywords": [
+            "coincidence",
+            "coincidences",
+            "random coincidence",
+            "random coincidences"
+        ]
+    },
+    "statistical_uncertainty": {
+        "sentences": [
+            "statistical uncertainty was determined from counting statistics",
+            "errors were calculated assuming Poisson statistics",
+            "counting statistics contribute to total uncertainty"
+        ],
+        "keywords": [
+            "statistical",
+            "uncertainty",
+            "poisson",
+            "counting"
+        ]
+    },
+    "uncertainty_propagation": {
+        "sentences": [
+            "uncertainties were combined in quadrature",
+            "total uncertainty was obtained from individual contributions",
+            "systematic and statistical uncertainties were propagated",
+            "covariance between uncertainty sources was considered"
+        ],
+        "keywords": [
+            "quadrature",
+            "combined",
+            "contributions",
+            "overall uncertainty"
+        ]
+    },
+    "time_of_flight": {
+        "sentences": [
+            "time-of-flight technique was used to determine energy",
+            "flight path length was used to calculate neutron energy",
+            "energy resolution was determined from TOF measurements"
+        ],
+        "keywords": [
+            "time-of-flight",
+            "time of flight",
+            "tof",
+            "flight path"
+        ]
+    }
+}
