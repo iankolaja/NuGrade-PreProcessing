@@ -19,4 +19,7 @@ The following packages are needed to run NuGrade locally:
 2. Place EXFOR experiment reports in pdfs with the EXFOR Entry as the file name.
 3. Run 2_report_embedding.ipynb to generate tokens, sentence-wise embeddings, and similarity features.
 4. Run 3_knn_imputation.ipynb to fill in missing uncertainty values using KNN.
-5. Place nugrade_data.db in the /data directory of your NuGrade installation.
+5. Run `python validate_output_db.py` to check the database against the schema contract the NuGrade app enforces at startup (`nugrade/db_contract.py` in the NuGrade repo — keep the two in sync when changing the schema).
+6. Place nugrade_data.db in the /data directory of your NuGrade installation.
+
+Note: the sentence embeddings are attention-mask-weighted **mean-pooled** SciBERT vectors (see `get_embeddings_batch` in 2_report_embedding.ipynb). The NuGrade app embeds search queries with the identical pooling; the two must never diverge.
