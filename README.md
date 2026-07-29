@@ -8,7 +8,9 @@ The following packages are needed to run NuGrade locally:
 - Pandas
 - PyTorch 
 - NumPy
-- OpenMC (required: `helper_functions.py` reads ACE files via `openmc.data`)
+- OpenMC (needed only to read ACE/HDF5 evaluation files, i.e. only where
+  `1_raw_data_ingestion.ipynb` runs. It is imported lazily, so the rest of the
+  repo — including the test suite — works without it.)
 - Spacy
 - PyMuPDF
 - Transformers
@@ -25,6 +27,8 @@ unit-tested without a cluster, ENDF files, or the X4Pro database:
   relative error (used by `1_raw_data_ingestion.ipynb`)
 - `imputation.py` / `test_imputation.py` — composite distance, neighbour weighting,
   feature standardization (used by `3_knn_imputation.ipynb`)
+- `helper_functions.py` / `test_helper_functions.py` — EXFOR target parsing and the
+  element-to-proton-number map
 
 ### Running
 1. Run 1_raw_data_ingestion.ipynb to start nugrade_data.db.

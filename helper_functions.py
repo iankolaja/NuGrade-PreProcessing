@@ -1,4 +1,10 @@
-import openmc.data
+"""Shared helpers for the ingestion notebooks.
+
+OpenMC is imported lazily, inside the two functions that read ACE/HDF5 evaluation files.
+Those only run on the cluster, where OpenMC is installed; keeping the import out of module
+scope means the pure helpers below (get_A, get_element, get_z) stay importable — and
+testable — on a laptop without OpenMC.
+"""
 import pandas as pd
 import sqlite3
 import numpy as np
@@ -21,7 +27,9 @@ def get_element(target_symbol):
     return element
 
 def extract_XS_openMC_hdf5(path, MT, interp_energies, temp='294K', do_plot=True):
-    # Load neutron data from ACE (processed at 293.6 K)
+    """Interpolate an evaluation cross section from an OpenMC HDF5 file onto given energies."""
+    import openmc.data  # cluster-only dependency; see module docstring
+
     nuclide_data = openmc.data.IncidentNeutron.from_hdf5(path)
     
     MTs_to_use = []
@@ -45,7 +53,13 @@ def extract_XS_openMC_hdf5(path, MT, interp_energies, temp='294K', do_plot=True)
 
 
 def extract_XS_openMC_ace(path, MT, interp_energies, temp='294K', do_plot=False):
-    # Load neutron data from ACE (processed at 293.6 K)
+    """Interpolate an evaluation cross section from an ACE file onto given energies.
+
+    ACE data is processed at 293.6 K; ``temp`` selects the tabulated temperature.
+    Raises KeyError if the evaluation has no data for ``MT``.
+    """
+    import openmc.data  # cluster-only dependency; see module docstring
+
     nuclide_data = openmc.data.IncidentNeutron.from_ace(path)
     
     MTs_to_use = []
