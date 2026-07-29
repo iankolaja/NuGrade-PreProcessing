@@ -76,6 +76,9 @@ def validate(db_path):
                     f"{EMBEDDING_DTYPE.__name__}, expected {EMBEDDING_DIM}"
                 )
 
+    if "measurements" in present:
+        problems.extend(_verify_physical_ranges(con))
+
     if "reports" in present:
         warnings.append(
             "stale 'reports' table present (current notebooks write "
@@ -84,6 +87,34 @@ def validate(db_path):
 
     con.close()
     return problems, warnings
+
+
+def _verify_physical_ranges(con):
+    """Check quantities that are non-negative by definition.
+
+    An uncertainty is a width and a chi-squared is a sum of squares, so neither can be
+    negative. EXFOR does contain genuinely negative cross sections (background-subtraction
+    artifacts), so `Data` is deliberately not checked — but anything *derived* from it
+    must take the magnitude, or the sign leaks into uncertainties and chi-squared.
+    """
+    problems = []
+    non_negative_columns = [
+        "dData", "dData_assumed", "dData_adopted",
+        "endf8_chi_squared", "endf7-1_chi_squared",
+    ]
+    columns = {r[1] for r in con.execute("PRAGMA table_info(measurements)")}
+    for column in non_negative_columns:
+        if column not in columns:
+            continue
+        n = con.execute(
+            f'SELECT COUNT(*) FROM measurements WHERE "{column}" < 0'
+        ).fetchone()[0]
+        if n:
+            problems.append(
+                f"'{column}' has {n} negative values; this quantity is non-negative "
+                "by definition (likely a negative cross section propagated without abs())"
+            )
+    return problems
 
 
 def main():

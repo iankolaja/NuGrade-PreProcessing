@@ -14,6 +14,12 @@ The following packages are needed to run NuGrade locally:
 - Transformers
 - Sklearn
 
+### Testing
+
+The imputation math is extracted into `imputation.py` so it can be unit-tested:
+
+    pytest test_imputation.py
+
 ### Running
 1. Run 1_raw_data_ingestion.ipynb to start nugrade_data.db.
 2. Place EXFOR experiment reports in pdfs with the EXFOR Entry as the file name.
@@ -23,3 +29,16 @@ The following packages are needed to run NuGrade locally:
 6. Place nugrade_data.db in the /data directory of your NuGrade installation.
 
 Note: the sentence embeddings are attention-mask-weighted **mean-pooled** SciBERT vectors (see `get_embeddings_batch` in 2_report_embedding.ipynb). The NuGrade app embeds search queries with the identical pooling; the two must never diverge.
+
+### Repairing an existing database
+
+`repair_derived_columns.py` fixes two ingestion bugs in an already-built database without
+re-running the notebooks against the cluster (the interpolated evaluation cross sections
+are already stored in the `endf8` / `endf7-1` columns):
+
+    python repair_derived_columns.py output/nugrade_data.db output/nugrade_data_fixed.db
+    python validate_output_db.py output/nugrade_data_fixed.db
+
+It writes a repaired copy and never modifies its input. Afterwards, re-run
+`3_knn_imputation.ipynb` against the repaired file so the KNN imputation uses corrected
+inputs.
