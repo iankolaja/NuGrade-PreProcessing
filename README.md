@@ -8,7 +8,7 @@ The following packages are needed to run NuGrade locally:
 - Pandas
 - PyTorch 
 - NumPy
-- OpenMC
+- OpenMC (required: `helper_functions.py` reads ACE files via `openmc.data`)
 - Spacy
 - PyMuPDF
 - Transformers
@@ -16,9 +16,15 @@ The following packages are needed to run NuGrade locally:
 
 ### Testing
 
-The imputation math is extracted into `imputation.py` so it can be unit-tested:
+The numerical work is extracted out of the notebooks into modules so it can be
+unit-tested without a cluster, ENDF files, or the X4Pro database:
 
-    pytest test_imputation.py
+    pytest
+
+- `ingestion.py` / `test_ingestion.py` — per-channel assumed uncertainties, chi-squared,
+  relative error (used by `1_raw_data_ingestion.ipynb`)
+- `imputation.py` / `test_imputation.py` — composite distance, neighbour weighting,
+  feature standardization (used by `3_knn_imputation.ipynb`)
 
 ### Running
 1. Run 1_raw_data_ingestion.ipynb to start nugrade_data.db.

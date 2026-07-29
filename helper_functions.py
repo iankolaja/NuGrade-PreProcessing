@@ -1,4 +1,4 @@
-#import openmc.data
+import openmc.data
 import pandas as pd
 import sqlite3
 import numpy as np
@@ -6,10 +6,11 @@ import os
 import matplotlib.pyplot as plt
 
 def get_A(target_symbol):
+    """Return the mass number from an EXFOR target string such as 'Li-7', or -1."""
     target = target_symbol.split("-")
     try:
         A = np.int16(target[1])
-    except:
+    except (IndexError, ValueError):
         A = -1
     return A
 
@@ -84,8 +85,9 @@ Z_MAP = {'Ac': 89, 'Ag': 47, 'Al': 13, 'Am': 95, 'Ar': 18, 'As': 33, 'At': 85, '
 
 
 def get_z(symbol, z_map=Z_MAP):
+    """Return the proton number for an element symbol, or 0 if it is not recognised."""
     try:
         z = z_map[symbol]
-    except:
+    except KeyError:
         z = 0
     return np.int16(z)
