@@ -48,3 +48,29 @@ are already stored in the `endf8` / `endf7-1` columns):
 It writes a repaired copy and never modifies its input. Afterwards, re-run
 `3_knn_imputation.ipynb` against the repaired file so the KNN imputation uses corrected
 inputs.
+
+### Rebuilding on the cluster and comparing
+
+`1_raw_data_ingestion.ipynb` is the only notebook that needs cluster access (ENDF/ACE
+files and the X4Pro database). Notebook 2 needs the report PDFs; notebook 3 needs only
+the database. So a rebuild does not require re-running everything:
+
+1. On the cluster, run `1_raw_data_ingestion.ipynb` into a fresh `output/`.
+2. Copy the resulting `nugrade_data.db` down.
+3. Graft the embedding tables from your existing database, so notebook 2 and the PDFs are
+   not needed — `report_embeddings` and `sentence_embeddings` are keyed on EXFOR_Entry and
+   are unaffected by an ingestion re-run:
+
+       python graft_embedding_tables.py old/nugrade_data.db new/nugrade_data.db
+
+4. Run `3_knn_imputation.ipynb` against the new database to redo the KNN imputation.
+5. Compare against the previous build and confirm the fixes landed:
+
+       python compare_databases.py old/nugrade_data.db new/nugrade_data.db
+       python validate_output_db.py new/nugrade_data.db
+
+`compare_databases.py` checks that raw EXFOR quantities are unchanged (only derived
+columns should move), that no derived uncertainty or chi-squared is negative or infinite,
+and that chi-squared matches `((Data - eval) / sigma)^2`. Both scripts are read-only with
+respect to the databases they are given, except for `graft_embedding_tables.py`, which
+writes only to its destination.
