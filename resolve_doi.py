@@ -126,17 +126,42 @@ def _first(value):
     return value
 
 
-def resolve_via_ads(reference, token, delay=0.4, timeout=30):
-    """Look up a DOI in ADS using bibstem + volume + page.
+def _strip_section_letter(page):
+    """'B353' -> '353'. Returns None if the page has no section prefix.
 
-    Returns a dict with ``doi``, ``bibcode``, ``source`` and ``evidence``, or None if the
-    reference has no bibstem mapping or nothing matches on volume and page.
+    1960s Physical Review split each volume into sections A and B with separate page
+    sequences, and EXFOR cites the page with its letter. ADS stores the digits only, so
+    `page:B353` finds nothing while `page:353` finds the article.
     """
-    bibstem = BIBSTEMS.get((reference.get("code") or "").upper())
-    volume, page = reference.get("volume"), reference.get("page")
-    if not (bibstem and volume and page):
-        return None
+    import re
 
+    match = re.fullmatch(r"[A-Za-z](\d+)", str(page).strip())
+    return match.group(1) if match else None
+
+
+def _titles_agree(candidate_title, reference_title):
+    """Loose title comparison, for confirming a section-stripped page match.
+
+    Compared on alphanumeric words only, since ADS marks up subscripts and EXFOR titles are
+    upper-cased and sometimes truncated. Requires the shorter title's words to be almost
+    entirely contained in the longer one.
+    """
+    import re
+
+    def words(text):
+        # Strip markup before tokenising: ADS writes "F<SUB>20</SUB>" where EXFOR writes
+        # "F20", and splitting on the tags would turn one token into three.
+        text = re.sub(r"<[^>]+>", "", text or "")
+        return set(re.findall(r"[a-z0-9]+", text.lower()))
+
+    candidate, reference = words(candidate_title), words(reference_title)
+    if not candidate or not reference:
+        return False
+    smaller, larger = sorted((candidate, reference), key=len)
+    return len(smaller & larger) / len(smaller) >= 0.8
+
+
+def _ads_query(bibstem, volume, page, token, delay, timeout):
     query = urllib.parse.urlencode({
         "q": f"bibstem:{bibstem} volume:{volume} page:{page}",
         "fl": "bibcode,doi,title,volume,page,year",
@@ -149,20 +174,58 @@ def resolve_via_ads(reference, token, delay=0.4, timeout=30):
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            payload = json.load(response)
+            return json.load(response)
     except (urllib.error.URLError, TimeoutError) as e:
         raise ResolutionError(f"ADS lookup failed: {e}") from e
     finally:
         time.sleep(delay)
 
+
+def resolve_via_ads(reference, token, title=None, delay=0.4, timeout=30):
+    """Look up a DOI in ADS using bibstem + volume + page.
+
+    Returns a dict with ``doi``, ``bibcode``, ``source`` and ``evidence``, or None if the
+    reference has no bibstem mapping or nothing matches on volume and page.
+
+    ``title`` is only consulted for the section-prefixed page retry described below; the
+    primary path never relaxes the volume/page requirement.
+    """
+    bibstem = BIBSTEMS.get((reference.get("code") or "").upper())
+    volume, page = reference.get("volume"), reference.get("page")
+    if not (bibstem and volume and page):
+        return None
+
+    payload = _ads_query(bibstem, volume, page, token, delay, timeout)
     for doc in payload.get("response", {}).get("docs", []):
         if _volumes_agree(doc.get("volume"), volume) and _pages_agree(doc.get("page"), page):
-            doi = _first(doc.get("doi"))
             return {
-                "doi": doi,
+                "doi": _first(doc.get("doi")),
                 "bibcode": doc.get("bibcode"),
                 "source": "ads",
                 "evidence": f"bibstem:{bibstem} volume:{volume} page:{page}",
+                "title": _first(doc.get("title")),
+            }
+
+    # 1960s Physical Review split volumes into sections A and B with separate page
+    # sequences; EXFOR cites "B353" while ADS stores "353". Retry with the letter stripped.
+    # Because sections A and B can both have a page 353 in the same volume, this relaxed
+    # match additionally requires the titles to agree — otherwise it could return the
+    # section-A paper for a section-B citation.
+    stripped = _strip_section_letter(page)
+    if not stripped or not title:
+        return None
+
+    payload = _ads_query(bibstem, volume, stripped, token, delay, timeout)
+    for doc in payload.get("response", {}).get("docs", []):
+        if (_volumes_agree(doc.get("volume"), volume)
+                and _pages_agree(doc.get("page"), stripped)
+                and _titles_agree(_first(doc.get("title")), title)):
+            return {
+                "doi": _first(doc.get("doi")),
+                "bibcode": doc.get("bibcode"),
+                "source": "ads",
+                "evidence": (f"bibstem:{bibstem} volume:{volume} page:{stripped} "
+                             f"(section letter stripped from {page}; title confirmed)"),
                 "title": _first(doc.get("title")),
             }
     return None
@@ -220,7 +283,7 @@ def resolve(bib, token=None, email=None, delay=0.4):
 
     if token:
         try:
-            match = resolve_via_ads(reference, token, delay=delay)
+            match = resolve_via_ads(reference, token, title=bib.get("title"), delay=delay)
         except ResolutionError:
             match = None
         if match:
