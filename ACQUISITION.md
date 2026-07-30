@@ -35,37 +35,61 @@ records, including the awkward real-world forms: nested parentheses in report co
 (`EANDC(E)-66`), an issue attached to the page with no comma (`917(19)`), issue labels
 containing slashes (`(2/186)`), and two-digit years with a month (`4912` = Dec 1949).
 
-### Measured coverage, 60-entry random sample
+### Measured coverage — full corpus, all 2,193 entries
 
 | | count | share |
 |---|---|---|
-| BIB record retrieved | 60/60 | **100%** |
-| has a title | 59/60 | 98% |
-| journal article with volume | 42/60 | 70% |
+| BIB record retrieved | 2,193 / 2,193 | **100%** |
+| has a title | 2,152 | 98.1% |
+| journal article | 1,533 | 69.9% |
+| grey literature | 654 | 29.8% |
 
-Reference types: 73% journal, 13% report, 5% private communication, 5% conference,
-2% thesis, 2% progress report. Extrapolated to the full corpus: **~1,535 journal articles
-and ~657 items of grey literature.**
+Grey literature breaks down as 222 reports, 192 conference papers, 107 progress reports,
+85 private communications, 26 proceedings, 18 theses and 4 books. None of these have DOIs;
+they route to OSTI, IAEA INDC, or interlibrary loan.
 
-### Measured DOI resolution, using title + volume + page
+### Measured DOI resolution — full corpus
 
-Strict matching — the candidate must agree on **both** volume and first page:
+Strict matching throughout: a candidate is accepted only if it agrees with the EXFOR
+reference on volume and first page.
 
-| | resolved |
-|---|---|
-| all journal articles | 6/18 (33%) |
-| Western-indexed journals only | 6/10 (**60%**) |
-| non-Western (Atomnaya Energiya, Chinese journals, ADP, FCY/L) | 0/8 |
+| | count | share |
+|---|---|---|
+| **DOI resolved** | **1,157** | 52.8% of all entries |
+| of journal articles | 1,157 / 1,533 | **75.5%** |
+| unresolved | 376 | 17.1% |
 
-**Zero false positives**, because a wrong article cannot agree on volume and page. The
-unresolved Western cases are mostly pre-1960 papers for which Crossref simply has no
-metadata — absent, not mismatched. Non-Western journals are not indexed by Crossref at all
-and need a different route: Russian titles usually have a translated counterpart
-(*Soviet Journal of Nuclear Physics*, *Soviet Atomic Energy*), and IAEA's INDC series
-carries translations of many others.
+Resolved by service: **ADS 980, Crossref 177.** ADS does 85% of the work, because it indexes
+by structured citation (bibstem, volume, page) — the exact shape of an EXFOR REFERENCE —
+while Crossref only offers fuzzy bibliographic search.
 
-Compare this with the author+year approach measured below: 60% correct with no false
-positives, versus 85% "matches" that were mostly wrong.
+A 300-entry sample predicted this closely (69.3% vs 69.9% journal share, 78.4% vs 75.5%
+resolution), so sampling is a reliable way to test changes before a full run.
+
+### What remains unresolved, and why
+
+Of 376 unresolved journal articles, roughly a third are Soviet and Russian titles:
+Atomnaya Energiya (45), YK (26), Yadernaya Fizika (19), SJA (13), Soviet Journal of Nuclear
+Physics (13), UFZ (9). This is **not** a missing-bibstem problem — AtEne, SvAtE, AtEn, JETP,
+ZhETF, SvJNP and BASUP were each tested against real volume/page pairs from this corpus and
+none matched. The English translations renumber volumes and pages relative to the Russian
+originals EXFOR cites, so no structured query can bridge them. They need title matching
+against the translation, or IAEA's INDC series, which carries many of them.
+
+BAP (32) is American Physical Society *meeting abstracts*, which largely have no DOI at all.
+Those are legitimately unreachable and should be recorded as such rather than retried.
+
+CNP (21) is the Chinese Journal of Nuclear Physics; no working ADS bibstem was found.
+
+### The headline
+
+**About 70% of EXFOR is journal literature, and three-quarters of that is now identifiable
+by DOI.** The imputation method is therefore broadly applicable rather than confined to a
+small accessible subset — which was the open question the whole survey existed to answer.
+
+Against 39 embedded reports today, 1,157 confirmed DOIs is a corpus roughly 30x larger,
+*if* the PDFs behind them can be obtained. That is the next unknown, and Stage 2 below is
+how to measure it.
 
 ---
 
