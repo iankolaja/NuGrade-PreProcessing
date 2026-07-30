@@ -1,0 +1,30 @@
+ENTRY            11197   20140206   20140604   20140530       1397
+SUBENT        11197001   20140206   20140604   20140530       1397
+BIB                  9         23
+TITLE      Neutron cross sections of the boron isotopes for
+           energies between 10 and 500 keV
+AUTHOR     (F.P.Mooring,J.E.Monahan,C.M.Huddleston)
+REFERENCE  (J,NP,82,16,1966)
+           #doi:10.1016/0029-5582(66)90520-7
+INSTITUTE  (1USAANL)
+FACILITY   (VDG,1USAANL)
+PART-DET   (N)
+DETECTOR   (BF3) System consists of 34 BF3 counters suspended
+           in mineral oil contained in a cylindrical tank 79 cm
+           in diam. This inner tank is surrounded by an annular
+           shield tank which has an outside diameter of 137 cm
+           and is filled with a saturated solution of NaBO2.
+METHOD     (TRN) The measurements reported here consisted of a
+           sequence of runs at each neutron energy En. For each
+           run, the neutrons counted were those transmitted
+           through a transmission sample and scattered by a
+           detector sample.
+HISTORY    (19760628T) Translated from SCISRS
+           (19800814A) converted to reaction formalism
+           (20140206A) BP: Digitized Fig. 3, added doi, updated
+           all subentries to new date formats, lower case.
+           Corrections according last EXFOR rules and Dict.
+ENDBIB              23
+NOCOMMON             0          0
+ENDSUBENT           26
+ENDENTRY             1

@@ -1,0 +1,105 @@
+ENTRY            40520   20211227   20220306   20220305       4203
+SUBENT        40520001   20211227   20220306   20220305       4203
+BIB                 14         94
+TITLE       Fast neutron radiative capture cross-section for
+           In-115, Ta-181, Au-197 and samarium and europium
+           isotopes.
+AUTHOR     (V.N.Kononov, B.D.Yurlov, G.N.Manturov, E.D.Poletaev,
+           V.M.Timokhov, V.S.Shorin)
+REFERENCE  ((R,YK-22,29,1977)=
+           (R,INDC(CCP)-105,29,1977))
+           Main reference. Experimental details.
+           C-S on figures for In-115, Ta-181, Au-197,
+           Eu-151,-153,-nat, Sm-147,-149 .
+           (R,YFI-23,3,1977) C-S tables for In-115,Ta-181,Au-197,
+           Eu-nat,-151,-153, Sm-147,-149.
+            In INDC(CCP)-171 - only first author and title.
+           (J,YF,26,947,1977) Issue 5. C-S on figures for In-115,
+           Ta-181, Au-197,  Eu-151,-153,-nat, Sm-147,-149,-nat .
+           (J,SNP,26,500,1977) Engl.translation of YF,26,947,1977
+           (J,YF,27,10,1978) Issue 1
+            Nd-142,-144,-146,148,150, Sm-144,-148,-150,-152,-154,
+            Gd-156,-158,-160, Er-166,-168,170 c-s on figures.
+           (J,SNP,27,5,1978) Engl.translation of YF,27,10,1978
+           ((C,77KIEV,2,206,1977)=
+           (R,INDC(CCP)-118,(2),206,1977)) INDC(CCP)-118-PART-II.
+            Nd-142,-144,-146,148,150, Sm-144,-148,-150,-152,-154,
+            Gd-156,-158,-160, Er-166,-168,170 C-S on figures.
+           (R,INDC(CCP)-121,1,1978)
+           Engl.translation of C,77KIEV,2,206,1977.
+           ((C,77KIEV,2,211,1977)=
+           (R,INDC(CCP)-118,(2),211,1977))  INDC(CCP)-118-PART-II.
+           In-115, Ta-181, Au-197, Eu-151,-153, Sm-147,-149 C-S on
+           figures.
+           (R,INDC(CCP)-121,7,1978)
+           Engl.translation of C,77KIEV,2,211,1977.
+INSTITUTE  (4RUSFEI)
+FACILITY   (VDG,4RUSFEI) FEI pulsed Van-de-Graaff
+                    accelerator EG-1
+INC-SOURCE (P-LI7) Metal lithium targets were used
+METHOD     (TOF) Time-of-flight method
+                    with time resolution 12. nsec/m and
+                    7 nsec/m at 0.8 m and 1.4 m, respectively.
+DETECTOR   (STANK) Liquid scintillation detector
+                    with hexafluorobenzene,volume 17 liters.
+                    B-10-plug and NaI(Tl)detector
+MONITOR    (5-B-10(N,A)3-LI-7,,SIG)         Energy dependence of
+                    neutron flux measured using
+                    B-10(n,alpha gamma) reaction.
+           ((MONIT)79-AU-197(N,G)79-AU-198,,SIG)
+           Absolute normalization , 596.+-24.mb at 30 keV.
+MONIT-REF  (,B.A.Magurno+,R,BNL-NCS-50464,1975)  Energy dependence
+             as given by Magurno B.A.,ENDF/B-4 Cross
+                    Section Measurement Standards,
+                    BNL-NCS-50464,1975.
+           ((MONIT)21848002,W.P.Poenitz+,J,JNE,22,505,1968)
+                    For absolute normalization Au capture
+                    cross-section at neutron energy 30.keV
+CORRECTION  Background correction,corrections for the multiple
+            neutron scattering, for resonance self-shielding and
+            for isotopic impurities content .
+ERR-ANALYS (ERR-T)    All errors shown on the data are total
+           (ERR-1,5.0,6.5) Systematic uncertainty of the
+           detection efficiency 5.0-6.5 %.
+           (ERR-2)    Standard uncertainties 5.0 % .
+           (ERR-3,1.,3.)   Correction uncertainties 1.0-3.0 %.
+           (ERR-S,1.0,12.) Statistical Error 12.0-1.0 %.
+COMMENT    .Of compiler M.M 2014-08-08.
+           Values of uncertainties given in articles
+           - see C,77KIEV,2,211,1977, YK-22, YFI-23 :
+           ERR-1 = 5.%,
+           ERR-2 - 4% for Au and 2-3% for Li,
+           ERR-3 - 6-0.5% for background correction, 3-1% for
+           correction on finite thickness of sample,
+           ERR-S - 0.5-4.% ,
+           differ from given in ERR-ANALYS.
+           Not corrected, because data (and maybe, also
+           uncertainties ?) were received from authors.
+           . In Entry 40513 - strength functions.
+HISTORY    (19770124C)
+           (19870312A) One author name corrected, data-errors
+                     in COMMON section introduced, ISO-QUANT into
+                     REACTION converted and references in proper
+                     Subentries placed
+           (19981103U)  Corrected by CJD
+                       This data supersede old data in Subentries
+                       40222002-40222003,40222006,
+                       40222008-40222010,40222012-40222013
+           (20050429C) Subent 003 Reaction code was corrected.
+             Isotope contents were added in sample lines.
+           (20050527U) Last checking has been done.
+           (20140808A) M.M. Upper -> lower case correction.
+           BIB information was updated.
+           MONIT was added. COMMENT was added.
+           References were added .
+           (20201015U) J,SNP,27,5,1977 => J,SNP,27,5,1978 .
+            Minor correction of free text in STATUS.
+           (20211227U) MONIT code was added in MONIT-REF (JNE).
+ENDBIB              94
+COMMON               4          3
+EN-NRM     ERR-2      MONIT      MONIT-ERR
+KEV        PER-CENT   MB         MB
+      30.           5.  596.       24.
+ENDCOMMON            3
+ENDSUBENT          101
+ENDENTRY             1

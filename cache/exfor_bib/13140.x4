@@ -1,0 +1,24 @@
+ENTRY            13140   20120210   20120702   20120625       1378
+SUBENT        13140001   20120210   20120702   20120625       1378
+BIB                  9         17
+INSTITUTE  (1USAORL,1USADNS) + U.C. Santa Barbara.
+REFERENCE  (J,AAA,216,109,1989)
+AUTHOR     (R.L.Macklin,R.R.Winters,D.M.Schmidt)
+TITLE      Resonance neutron capture by argon-40.
+FACILITY   (LINAC,1USAORL) Orela 40-m capture facility
+SAMPLE     Natural argon: 99.6% 40Ar. The argon was contained at
+           42-atmospheres pressure in a stainless steel cylinder
+           with 0.12 mm  thick walls.
+DETECTOR   (SCIN) Perfluorobenzene liquid scintillators
+            calibrated by saturated resonance method using 4.9eV
+            resonance of Au
+STATUS     (APRVD) R.L.Macklin, 89/1/23.
+HISTORY    (19881114C)
+           (19891106A) reference update.
+           (20120207A) BP:Updated description and uncertainties,
+            added 13140003, 13140004 subentries with missing data.
+            Converted to lower case, updated errors.
+ENDBIB              17
+NOCOMMON             0          0
+ENDSUBENT           20
+ENDENTRY             1

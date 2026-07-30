@@ -1,0 +1,34 @@
+ENTRY            30134   20080208   20080530   20080530       3126
+SUBENT        30134001   20080208   20080530   20080530       3126
+BIB                 13         27
+INSTITUTE  (3BANDAC)
+REFERENCE  (J,NP/A,209,189,197307) Final pub.
+           (P,AECD/MISC-2,11,196912)Experimental details, no data.
+           (P,INDC-284,1,196905) Experiments being planned.No data
+           (R,AECD/EP-18,197012) Compilation,same data as priv.com
+AUTHOR     (E.Islam,M.Hussain,N.Ameen,M.Enayetullah,N.Islam)
+TITLE      Total neutron cross section data for Y,Zr,La,Ce,Pr,Gd,
+           Ho,Ta,Hg between 1.0 and 2.0 MeV.
+FACILITY   (VDG)3.0-MeV Van de Graaf at Atomic Energy Center,Dacca
+INC-SOURCE (P-T) T(p,n)He3
+METHOD     (TRN) Transmission measurement
+DETECTOR   (SCIN) Stilbene scintillator,RCA 8575 photo-multiplier
+           ORTEC system using zero-crossover technique for neutron
+           gamma discrimination.
+MONITOR     Absolute measurement, transmission.
+PART-DET   (N) neutrons
+STATUS     (TABLE) Data from letter from E. Islam of 12 Oct 1971
+           (APRVD) corrections to data in letters from E.Islam
+                                              720210 and 720214.
+HISTORY    (19711012R) data received in letter from E.Islam
+           (19711112C) compiled into Exfor
+           (19720225A) data corrected
+           (19730601U) FM.
+           (19790320U) ND.- Ref.Added  -
+           (20080208A) BIB section updated
+ERR-ANALYS (ERR-S) Data error is statistical only and is quoted
+           as the standard deviation.
+ENDBIB              27
+NOCOMMON             0          0
+ENDSUBENT           30
+ENDENTRY             1

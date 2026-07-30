@@ -1,0 +1,44 @@
+ENTRY            30987   20090919   20091224   20091223       3141
+SUBENT        30987001   20090919   20091224   20091223       3141
+BIB                 12         33
+TITLE      Cross sections of In-113(n,n')In-113-m and
+           In-113(n,2n)In-112-m+g reactions around 2 and 14
+           MeV neutron energies.
+AUTHOR     (Cs.M.Buczko,J.Csikai,T.Chimoye,B.W.Jimba)
+INSTITUTE  (3HUNKOS)
+REFERENCE  (C,91JUELIC,,656,199105)
+SAMPLE     High-purity indium metal samples, 15*15*0.25 mm.
+FACILITY   (CCW)
+METHOD     (ACTIV)
+DETECTOR   (GELI,NAICR)
+           (BF3) Flux-variation in time measured by BF3
+CORRECTION Corrections were carried out for the following effects:
+           - Self-absorption
+           - Dead time
+           - Fluctuation of neutron yield as a function of time
+           - Contribution of room scattered fast neutrons
+           - Contribution of d-d neutrons to the (n,n') reaction
+             in the 14 MeV region.
+ERR-ANALYS (ERR-T) Total uncertainty includes statistical and
+           systematic components. The principal sources of
+           systematic uncertainty were:
+           (ERR-1) Neutron flux determination               (2%)
+           (ERR-2) Uncertainties in half-lifes              (1%)
+           (ERR-3) Uncertainties in standard cross sections (1%)
+             * detector efficiencies    ( Ge(Li) 1%, NaI 5%)
+             * correction for D-D contribution (Subent 002) to the
+             (n,n') reaction in the 14 MeV region    (<2%)
+STATUS     (TABLE) Data are from Tables of 91JUELIC,,656,1991
+HISTORY    (19920907C)
+           (19930407U) HW.-Correction in Bib-section of subent 002
+           (20090912A) SD:Updated to new date formats,lower case.
+           Cosmetic changes, Common section and codes for
+           err-analys were added. Source of data was changed.
+ENDBIB              33
+COMMON               3          3
+ERR-1      ERR-2      ERR-3
+PER-CENT   PER-CENT   PER-CENT
+  2.          1.        1.
+ENDCOMMON            3
+ENDSUBENT           40
+ENDENTRY             1

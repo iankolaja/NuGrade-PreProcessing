@@ -1,0 +1,53 @@
+ENTRY            22072   20211228   20220319   20220317       2306
+SUBENT        22072001   20211228   20220319   20220317       2306
+BIB                 13         46
+TITLE      Structure of unbound states in 29Si from neutron
+            resonance spectroscopy of 28Si+n
+AUTHOR     (H.Weigmann, P.W.Martin, R.Koehler, I.van Parijs,
+            F.Poortmans, J.A.Wartena)
+REFERENCE  (J,PR/C,36,585,1987)
+           (C,88MITO,,707,1988)
+INSTITUTE  (2ZZZGEL)
+FACILITY   (LINAC,2ZZZGEL) Geel 150 MeV linac. Pulsed beam with
+            repetition rate 800 Hz, and burst widths between 0.7
+            and 5 ns.
+INC-SOURCE Hg-cooled uranium target. unmoderated for transmission
+            measurements and both unmoderated and moderated with
+            two Be-canned water moderators for the capture
+            measurements.
+SAMPLE     Transmission measurements: The sample was metallic
+            silicon of natural isotopic composition and had a
+            thickness of 0.07356 atoms/b.
+           Capture measurements: The samples were compressed
+            discs of natural silicon, each 8 cm in diameter and
+            of thicknesses 8 mm and 16 mm.
+DETECTOR   (SCIN) For transmission measurements. The detectors
+            were placed at 400 m flight path. The dimensions of
+            the NE 110 scintillators were 15x15x2 cm3 and 5 cm
+            diameter by 2.5 cm thick, respectively.
+           (BGO) For capture measurements. Four 7.5 cm diameter
+            by 7.5 cm thick BGO detectors were used. They were
+            placed at a flight path of 130 m at angles of 39, 90,
+            125, and 141 degrees with respect to the neutron beam.
+METHOD     (TOF,TRN) Transmission and capture measurements.
+ANALYSIS   (MLA) Multi-channel multi-level R-matrix analysis were
+            performed for the transmission data, using the code
+            MULTI.
+           (AREA) The capture gamma yield data were analysed
+            with the area analysis code TACASI.
+MONITOR    (26-FE-56(N,G),,ARE) The well-known 1.15 keV resonance
+            was used to determine the absolute capture yields.
+CORRECTION The transmission data were corrected for instrumental
+            dead time and for background.
+           The capture data were corrected for scattered neutron
+            background, Compton contribution from higher energy
+            gamma rays, multiple scattering and self shielding.
+HISTORY    (19871019C) N.O.
+           (19890531U) IF. Reference added
+           (19970111A) N.O. BIB section corrected. 010 added.
+           (20160208A) On. 002-003 restored. Major rev.in 004-006.
+           (20211228A) SD: Correction in Subent 008.
+ENDBIB              46
+NOCOMMON             0          0
+ENDSUBENT           49
+ENDENTRY             1

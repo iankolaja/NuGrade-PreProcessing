@@ -1,0 +1,35 @@
+ENTRY            30114   20080208   20080530   20080530       3126
+SUBENT        30114001   20080208   20080530   20080530       3126
+BIB                 14         28
+INSTITUTE  (3SAFPEL)experiment performed at
+           (3SAFSUN)experiment performed at
+           (3SAFSCT)for l.M.Spitz and  F.D.Barnard
+REFERENCE  (J,NP/A,121,655,196812) Full description, graphs
+           (W,BROOKS,196909) Minor corrections.
+AUTHOR     (L.M.Spitz, E.Barnard, F.D.Brooks)
+TITLE      Neutron capture cross sections of Cr,Mn,Ni,Nb,Ag,In,Sb
+           and Au in the 8 to 120 keV region
+FACILITY   (VDG,3SAFPEL) Pulsed Van de Graaff 3MeV at Pelindaba
+           (VDG,3SAFSUN) 5.5MeV at SUNI.
+METHOD     (TOF) Time-of-flight used to eliminate background
+           gammas and in some cases to measure neutron energy.
+INC-SOURCE (P-LI7) Neutron energy was calculated from the proton
+           energy, assuming a value of -1.6433 MeV for the
+           Li-7(p,n)Be-7 reaction Q-value, or determined from
+           the time-of-flight measurement.
+SAMPLE     Metal disks of either 2.5 cm or 5.1 cm diam.
+DETECTOR   (MOXR) Moxon RAE detectors with plastic scintillator
+CORRECTION Corrections have been made for multiple scattering and
+           self-screening.
+COMMENT    The two data sets in subents 019 and 020 for the
+           In-0(n,g) reaction correspond to different geometries.
+ERR-ANALYS (DATA-ERR) No details given
+STATUS     (TABLE) Data correspond to Fig 5 -7 of Nucl. Phys.,
+           vol. A121, p. 655(1968).
+HISTORY    (19970604A)Keywords added in subent 001,subents 019 and
+           020 added ( previous subents 78013007, -008).
+           (20080208A) BIB section updated
+ENDBIB              28
+NOCOMMON             0          0
+ENDSUBENT           31
+ENDENTRY             1

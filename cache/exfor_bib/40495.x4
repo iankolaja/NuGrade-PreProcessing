@@ -1,0 +1,38 @@
+ENTRY            40495   20170320   20170703   20170630       4175
+SUBENT        40495001   20170320   20170703   20170630       4175
+BIB                 11         31
+INSTITUTE  (4RUSNIR)
+REFERENCE  (J,SJA,47,851,1979) Eng.trans.of AE,47,269,1979
+           (J,AE,47,(4),269,197910)
+AUTHOR     (V.A.Anufriev,A.G.Kolesov,S.N.Nikol'skii,V.A.Safonov)
+TITLE       Measurement of the total neutron cross section of
+            Nd-145
+FACILITY   (REAC,4RUSNIR) Reactor SM-2, neutron spectrometer
+SAMPLE      Oxide Nd2-O3,
+            Nd-142 content  0.60%, thickness 6.30 x 10**(-5) at/b
+            Nd-143 content  0.50%, thickness 6.20 x 10**(-5) at/b
+            Nd-144 content  2.99%,thickness 3.11 x 10**(-4) at/b
+            Nd-145 content 84.80%, thickness 8.76 x 10**(-3) at/b
+            Nd-146 content 10.72%, thickness 1.10 x 10**(-3) at/b
+            Nd-148 content  0.28%, thickness 2.80 x 10**(-5) at/b
+            Nd-150 content  0.11%, thickness 1.10 x 10**(-5) at/b
+METHOD     (TOF)  Flight base 91.7 m, resolution 70 nsec/m
+                  for energies 0.02-1 eV resolution 1500 nsec/m
+           (TRN)  Energy range up to 350 eV.
+             1500 nsec/m resolution at 0.02 - 1 eV energy.,
+DETECTOR   (PROPC)  He-counters SNM-17
+ANALYSIS   (SHAPE)  For resonance parameters determination
+                    below 103 eV
+           (AREA)   for resonance parameters determination
+                    above 103 eV
+MONITOR     Absolute measurements
+HISTORY    (19800606C)
+           (20150312A) SD: Updated to new date formats,lower case.
+            Ref. on Engl.transl. of AE added.
+           (20150320A) M.M. Article was checked, information was
+            updated in TITLE,STATUS,METHOD .
+            Subents 003,004 were re-stored from archive.
+ENDBIB              31
+NOCOMMON             0          0
+ENDSUBENT           34
+ENDENTRY             1

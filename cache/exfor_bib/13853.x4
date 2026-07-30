@@ -1,0 +1,21 @@
+ENTRY            13853   20181203   20190301   20190227       1445
+SUBENT        13853001   20181203   20190301   20190227       1445
+BIB                 11         14
+INSTITUTE  (1USABET)
+REFERENCE  (J,JNE/AB,14,186,1961)
+AUTHOR     (M.Reier)
+TITLE      The diffusion length of thermal neutrons in poisoned
+            water
+FACILITY   Not given.
+SAMPLE     Water in B2O3 solution.
+METHOD     Measured neutron diffusion length. No experimental
+            details given.
+MONITOR    (5-B-0(N,ABS),,SIG)
+ERR-ANALYS (DATA-ERR) No information on source of uncertainty.
+STATUS     (TABLE) Data taken from paper, p.188
+HISTORY    (20021202C)
+           (20181202U) OS. REFERENCE coding updated
+ENDBIB              14
+NOCOMMON             0          0
+ENDSUBENT           17
+ENDENTRY             1

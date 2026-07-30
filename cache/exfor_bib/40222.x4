@@ -1,0 +1,61 @@
+ENTRY            40222   20180418   20180612   20180601       4179
+SUBENT        40222001   20180418   20180612   20180601       4179
+BIB                 15         50
+TITLE       Radiative capture cross-sections for neutrons in the
+            5-70 keV energy range, for isotopes of gadolinium and
+            erbium .
+AUTHOR     (V.S.Shorin,V.N.Kononov,E.D.Poletaev)
+INSTITUTE  (4RUSFEI)
+REFERENCE  (R,YFI-17,9,1974)  Main reference, data are given
+           (R,INDC(CCP)-48/L,5,1975) Engl.translation of YFI-17,9
+           (J,SNP,19,2,1974) Eng.transl.of YF,19,5,1974
+           (J,YF,19,5,1974)               Graph only.
+FACILITY   (VDG,4RUSFEI)  FEI  pulsed  Van  de  Graaff.
+INC-SOURCE (P-LI7)    Proton-lithium-7
+METHOD     (TOF) Time-of-flight  method  with  time resolution
+            25  nsec/m  at  flight  path 85  cm
+SAMPLE      Enriched ( > 90 %) samples in the form of oxides.
+DETECTOR   (STANK)    Liquid  scintillation  detector  with
+                      hexafluorobenzene.  Volume  17  litres
+MONITOR    ((MONIT)79-AU-197(N,G)79-AU-198,,SIG)
+            For absolute normalization, at 30 keV neutron energy.
+            From  W.P.Poenitz,66PARIS,CN23/6
+           (5-B-10(N,A)3-LI-7,,SIG) Neutron flux monitor.
+           For relative shape of cross section energy dependence.
+           Constructed from data of M.G.Sowerby+,70Helsinki,1,161
+            (EXFOR 20426) and R.L.Macklin,J.H.Gibbons,
+           Phys.Rev.165,1147,1968 (EXFOR 11240)
+MONIT-REF  ((MONIT)21193001,W.P.Poenitz,C,66PARIS,1,277,1966)
+REL-REF    (R,20426001,M.G.Sowerby+,C,70HELSINKI,1,161,1970)
+           (R,11240003,R.L.Macklin+,J,PR,165,1147,1968)
+CORRECTION  Background correction, corrections for multiple
+            neutron  scattering, resonance self-shielding and
+            isotopic  impurities.
+ERR-ANALYS (ERR-T)  Total error.
+           (ERR-1)  Systematic uncertainty in detector efficiency
+           (ERR-2)  Standard uncertainties = 4.5%
+           (ERR-3,2.,4.)  Correction  uncertainty
+           (ERR-4,2.,3.)  Error of B10(n,alpha) CS was taken as
+            2% at En<10 keV , 3% at En >10 keV.
+           Error due to correction for isotopic impurities is
+           negligible .
+           (ERR-S,2.,11.)  Statistical error
+HISTORY    (19740320C)  Compiled  at the  centre
+           (19870309A)  Data in San 2,3,6,8-10,12,13 superseded
+                      according to the author's decision
+                      ISO-QUANT into REACTION converted
+           (19981103A)  corrected in the centre - CJD
+           (20150109A) SD: Updated to new date formats,lower case.
+             Ref. on Engl.transl. of YF added.
+           (20151204A) M.M. Articles were checked, BIB information
+           was updated in TITLE,MONITOR,REL-REF,ERR-ANALYS.
+           Ref. INDC(CCP)-48/L,5,1975 was added .
+           (20180418A) Subent 002 data value was corrected.
+ENDBIB              50
+COMMON               5          3
+ERR-1      ERR-2      EN-NRM     MONIT      MONIT-ERR
+PER-CENT   PER-CENT   KEV        MB         PER-CENT
+ 6.         4.5        30.        596.       4.
+ENDCOMMON            3
+ENDSUBENT           57
+ENDENTRY             1

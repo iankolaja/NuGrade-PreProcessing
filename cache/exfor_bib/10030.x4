@@ -1,0 +1,48 @@
+ENTRY            10030   20200811   20210128   20210127       1472
+SUBENT        10030001   20200811   20210128   20210127       1472
+BIB                 14         41
+TITLE      Reaction cross sections of 85Rb(n,gamma)86Rb(m),
+           87Rb(n,gamma)88Rb, and 89Y(n,gamma)90Y(m) between
+           0.16 MeV and 1.5 MeV
+AUTHOR     (N.D.Dudey,R.R.Heinrich,A.A.Madson)
+REFERENCE  (J,JNE,24,181,1970)
+           #doi:10.1016/0022-3107(70)90034-1
+           (P,ANL-7450,105,1968) Preliminary results.
+           (P,ANL-7575,170,1969) Subsequent preprint.
+REL-REF    (M,10026001,N.D.Dudey+,J,JNE,23,443,1969) Irradiation
+           conditions and flux monitoring techniques.
+INSTITUTE  (1USAANL)
+FACILITY   (VDG,1USAANL) 4-MeV Van de Graaff.
+INC-SOURCE (P-LI7) Neutrons were produced by the 7Li(p,n)7Be
+           reaction.
+INC-SPECT  Energy resolution given is 1/2 full energy spread.
+METHOD     (ACTIV) The targets were irradiated, disintegration
+           rate was determined by counting gamma-rays. The
+           neutron intensity was monitored both by a 235U
+           fission counter and by gold foils sandwiching the
+           targets.
+MONITOR    (92-U-235(N,F),,SIG)    From BNL-325, Suppl.2 (1965)
+           (79-AU-197(N,G)79-AU-198,,SIG)  Secondary standard.
+           The neutron intensity was monitored both by a 235U
+           fission counter and by gold foils sandwiching the
+           targets.
+MONIT-REF  (,J.R.Stehn+,R,BNL-325,(S2),1965)
+CORRECTION Corrected for angular distribution of neutrons,
+           second neutron group. Not corrected for neutron
+           scattering or self-absorption (estimated less than
+           2%). corrected gamma decay data for decay during
+           counting time.
+STATUS     (APRVD) Approved by author.
+HISTORY    (19691219C)
+           (19800723A) converted to reaction formalism
+           (19990719A) converted to new date formats, lower case.
+           (20120325A) SD: Page added to report in REFERENCE;
+           ERR-ANALYS was updated in all Subents according to
+           new EXFOR rules. Cosmetic changes in all subents.
+           (20171114U) OS. Minor corr. in sub.1
+           (20200811A) BP: Updated references, added doi,
+           REL-REF, decay data.
+ENDBIB              41
+NOCOMMON             0          0
+ENDSUBENT           44
+ENDENTRY             1

@@ -1,0 +1,45 @@
+ENTRY            20198   20140822   20150107   20141107       2240
+SUBENT        20198001   20140822   20150107   20141107       2240
+BIB                 11         38
+INSTITUTE  (2NEDAMS)
+REFERENCE  (T,NAGEL,196612) Cu-65(n,2n), F-19(n,2n), Cl-35(n,alpha
+            Cl-35(n,p), Ca-42(n,p), Ca-43(n,p),
+            Rh-103(n,n')(metastable), In-115(n,n')
+            (metastable), In-115(n,alpha), In-115(n,2n)(g),
+            Cs-133(n,2n), Os-188(n,p), Os-190(n,alpha).
+            Values final.
+           (J,JNE/AB,20,475,196606) Rh-103(n,n')(metastable),
+            Cu-65(n,2n).
+           (J,PHY,31,1091,196512) the same nuclei and reaction as
+            in thesis except Rh-103(n,n')(metastable)
+            and In-115(n,2n)(g). Values preliminary.
+           (J,PHY,30,775,1964) In-115(n,n')(metastable).
+            Preliminary.
+AUTHOR     (W.Nagel)
+TITLE      - Some nuclear reactions induced by d+t neutrons -
+FACILITY   (CCW,2NEDAMS) Cockcroft-Walton accelerator for 14.6 MeV
+            neutrons.
+INC-SOURCE (D-T)   Sealed neutron source of Reifenschweiler
+            for 14.2 MeV neutrons.
+METHOD     (ACTIV)    Activation
+DETECTOR   (NAICR)    Well type 6 cm diam., 6 cm high Na-I crystal
+            except for P-32 activities, (Cl-35(n,alpha)P-32).
+STATUS     (TABLE) .Data from thesis Nagel page 59, Cu-65(n,2n),
+            page 60, many, page 62, F-19(n,2n) at 14.4 MeV
+            (interpolated).
+ERR-ANALYS (DATA-ERR) Quadratic combination of all errors(standard
+            deviation, calibration, chemical recovery, counting
+            statistics, decay curve).
+HISTORY    (19721003C)
+           (19740521E)
+           (19810224A) reaction codes revised.
+           (19810310E)
+           (20060807A) Date and reference are corrected.
+           (20060807U) Last checking has been done.
+           (20140822A) SD: Updated to new date formats,lower case.
+            Corrections according last EXFOR rules and Dict.
+            Monit value corrected in Sub.4. ERR-T -> DATA-ERR
+ENDBIB              38
+NOCOMMON             0          0
+ENDSUBENT           41
+ENDENTRY             1

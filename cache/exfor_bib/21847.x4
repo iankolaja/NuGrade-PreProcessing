@@ -1,0 +1,41 @@
+ENTRY            21847   20230130   20230523   20230523       2313
+SUBENT        21847001   20230130   20230523   20230523       2313
+BIB                 12         30
+TITLE       The Au(n,2n) and Au(n,gamma) cross sections at 14 MeV
+AUTHOR     (T.B.Ryves,P.Kolkowski)
+INSTITUTE  (2UK NPL)
+REFERENCE  (J,JP/G,7,115,1981) Main reference.
+           (P,NEANDC(E)-212,(8),87,1980) Preliminary data.
+FACILITY   (VDG,2UK NPL) Accelerator SAMES.
+INC-SOURCE (D-T) 140 keV deuterons onto a Ti-t target. The
+            neutron flux density was continuously monitored
+            with a long counter.
+SAMPLE      Au foils (240 mg, 2.54 cm in diam.) were sandwiched
+            between two Fe foils (380 mg, 2.54 cm in diam.).
+METHOD     (ACTIV)
+DETECTOR   (GELI) A calibrated Ge(Li) detector, active volume
+            40 cm3.
+MONITOR    (26-FE-56(N,P)25-MN-56,,SIG) The activities of the
+            Fe foils were measured with the 4*pi beta-gamma
+            coincidence technique.  Value taken from an
+            evaluation by ryves and axton, and a further
+            contribution of 0.1 mb was added to account for
+            other reactions which also produce Mn-56.
+ERR-ANALYS  The following variance-covariance matrix was given
+            for the measurements,
+            Au(n,2n)g+m  0.031**2
+            Au(n,2n)m/g  0.003**2 0.043**2
+            Au(n,g)      0.031**2 0         0.096**2
+            Fe56(n,p)    0.009**2 0         0.009**2 0.009**2
+HISTORY    (19830414C)
+           (19830727A) BN.  In Se003 'decay-data' corrected
+           (20230130A) SD:Updated to new date formats,lower case.
+           Corrections in all Subents.
+ENDBIB              30
+COMMON               2          3
+MONIT      MONIT-ERR
+MB         MB
+    109.9       1.0
+ENDCOMMON            3
+ENDSUBENT           37
+ENDENTRY             1

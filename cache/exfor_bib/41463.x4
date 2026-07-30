@@ -1,0 +1,45 @@
+ENTRY            41463   20150928   20151123   20151116       4171
+SUBENT        41463001   20150928   20151123   20151116       4171
+BIB                 16         31
+TITLE       Measurement of thermal neutron radiative capture
+            cross-sections of the 14-N And 19-F by in-beam
+            gamma-spectroscopy method with reactor neutrons
+AUTHOR     (A.I.Egorov,R.I.Krutova,Yu.E.Loginov,S.Eh.Malyutenkova)
+INSTITUTE  (4RUSLIN)
+REFERENCE  (J,NIM/A,545,296,2005)
+FACILITY   (REAC,4RUSLIN) WWR-M Reactor
+METHOD     (TOF) For neutron spectrum measuring.
+           (GSPEC) Detection of prompt g-rays emitted following
+            neutron capture and of photons accompanying beta decay
+            of residual nuclei.
+INC-SOURCE (REAC) External thermal neutron beam of WWR-M reactor.
+INC-SPECT   Narrow neutron spectrum,maximum at 0.028+-0.002 eV,
+            FWHM about 0.03 eV,most probable neutron velocity
+            2200m/s. Neutron flux at sample site 2.E+7 n/cm2/s.
+SAMPLE      Homogeneous mixture of chemical compounds
+            Pb(NO3), CaF2, LiF and Teflon with Al2O3.
+DETECTOR   (HPGE) Efficiency error <= 0.4% up to E-gamma 2 MeV.
+MONITOR    ((MONIT)13-AL-27(N,G)13-AL-28,,SIG)
+MONIT-REF  (,S.F.Mughabghab+,B,NEUT.CS 1A,,1981)
+DECAY-MON  (13-AL-28,2.24MIN,DG,1779.,1.)
+ANALYSIS          Comparison of areas of g-lines in isotope under
+            investigation and in isotope used as standard.
+ERR-ANALYS (ERR-T) Total error (1.5-2.%)
+           (ERR-1) Error of cross-section standards
+           (ERR-2) Error of gamma-efficiency of spectrometer
+           (ERR-3) Error of number of atoms determination
+HISTORY    (20060208C)  Compiled at CJD (M.M.)
+           (20150928A) M.M. AUTHOR and TITLE were corrected.
+            NO-DIM -> PC/REAC for ASSUM (-ERR) values; REL deleted
+            from ASSUMED reactions.
+ENDBIB              31
+COMMON               8          6
+EN         EN-RSL-FW  ERR-1      ERR-2      ERR-3      MONIT
+MONIT-ERR  EN-ERR
+EV         EV         PER-CENT   PER-CENT   PER-CENT   B
+B          EV
+0.028      0.03       1.         0.5        0.1        0.231
+0.003       0.002
+ENDCOMMON            6
+ENDSUBENT           41
+ENDENTRY             1

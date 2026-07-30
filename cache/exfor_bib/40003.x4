@@ -1,0 +1,67 @@
+ENTRY            40003   20210622   20210810   20210810       4196
+SUBENT        40003001   20210622   20210810   20210810       4196
+BIB                 13         56
+INSTITUTE  (4RUSFEI)
+REFERENCE  (J,AE,21,506,1966) Issue 6. Graph only
+           (J,SJA,21,1213,1966) English translation of At.Energja
+           (J,EAF,21,(6),120,1966) French translation of Atomnaja
+           Energija
+           (C,66PARIS,1,473,1966)
+AUTHOR     (V.A.Tolstikov,V.P.Koroleva,V.E.Kolesov,A.G.Dovbenko)
+TITLE      Radiative capture of fast neutrons by Y89
+FACILITY   (VDG) Van de Graaff (2.5MeV and 5.0 MeV)
+INC-SOURCE (P-LI7) Proton-lithium-7 in neutrons energy range from
+               0.009 MeV up to 0.3 MeV
+           (P-T) Proton tritium in energy range of neutrons
+           from 0.3 MeV to 3.0 MeV
+SAMPLE     Y(2)0(3) sample 0.640 g/cm**2 thick.
+METHOD     (ACTIV)
+DETECTOR   (PROPC)    Two end-type beta counters in geometry near
+           4PI
+           (FISCH) Fission chamber for registration of U-235
+           fission events
+           (LONGC) Long counter for background measurement,
+           neutron flux monitoring and etc.
+MONITOR    ((MONIT1)92-U-235(N,F),,SIG)
+            At thermal energy.See M.D.Goldberg et al.
+           Neutron cross-section,BNL-325,second edition,suppl.No.2
+           v.2A,1966.See Value MONIT1 in COMMON section
+           ((MONIT2)39-Y-89(N,G)39-Y-90,,SIG)
+            At thermal energy.See M.D.Goldberg et al.
+           Neutron cross-section,BNL-325,Second Edition,Suppl.No.2
+           v.2A,1966.See value MONIT2 in COMMON section
+           (92-U-235(N,F),,SIG)
+            For absolute normalization of cross
+           section in energy range from 0.3 MeV up to 3.5 MeV
+           see M.Davey,Nucl.Sci.and Eng.26,149,1966.
+           For absolute normalization of cross section below 0.3
+           MeV we used the data of this work above 0.3 MeV
+CORRECTION Corrections were introduced
+           on background of neutrons scattered from material,
+           of target underlayer and target holder,
+           on background of neutrons scattered in measuring room,
+           on background of neutrons from foreign reactions,
+           on neutrons flux attenuation with distance from target,
+           on 92-U-238 fission,
+           on deviation of U-235 fission cross-section energy
+           dependence from 1/v low in thermal neutrons energy
+           range
+ERR-ANALYS (EN-ERR) Energy errors are explained by scatter
+           of proton energy,final thickness of target,angular
+           dimensions of irradiated sample and chamber
+           (ERR-1)     Includes error in energy dependence of
+           measured cross-section,namely statistical errors,
+           errors in corrections,errors in U-235 fission cross-
+           sections
+           (ERR-T)     Includes all errors of experiment,errors
+           of supporting cross sections
+HISTORY    (19700708C) Data compiled at the centre
+           (20210622U) M.M. Update for current rules.
+ENDBIB              56
+COMMON               5          3
+EN-NRM     MONIT1     MONIT1-ERR MONIT2     MONIT2-ERR
+EV         B          B          B          B
+ 2.5300E-02 577.1      0.9        1.28       0.02
+ENDCOMMON            3
+ENDSUBENT           63
+ENDENTRY             1

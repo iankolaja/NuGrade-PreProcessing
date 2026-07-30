@@ -1,0 +1,26 @@
+ENTRY            41020   20250313   20250429   20250429       4223
+SUBENT        41020001   20250313   20250429   20250429       4223
+BIB                  6         19
+TITLE       The neutron capture cross-sections of fast neutron
+           for dysprosium isotopes
+AUTHOR     (M.V.Bokhovko,L.E.Kazakov,V.N.Kononov,E.D.Poletaev,
+           V.M.Timokhov)
+INSTITUTE  (4RUSFEI)
+REFERENCE  ((J,YK,,(4),8,1988)=
+           (R,INDC(CCP)-299,8,1988)) In Russian.
+            Data tables are given
+FACILITY   (VDG,4RUSFEI)  Van-de-Graaff EG-1 accelerator,
+            pulse duration 2-3 nsec, frequency  500 kHz, average
+           current 2microA.
+HISTORY    (19900712C)  -- Compiled at the center - CJD  --
+           (20180325A) M.M. Upper -> lower case correction .
+           Dates were corrected for 4-digits year.
+           Ref. INDC(CCP)-299,8,1988 was added.
+           BIB information was updated in ERR-ANALYS, MONITOR
+           (20250313D) Subents 002-007 were deleted, data were
+           moved in 41177.102-.107 according to a comment of
+           N.Otsuka (NDS,IAEA).
+ENDBIB              19
+NOCOMMON             0          0
+ENDSUBENT           22
+ENDENTRY             1

@@ -15,10 +15,67 @@ Three separate bottlenecks, worth attacking in this order:
 | Extract clean text | automated, unverified | 16.5% of sentences are garbage |
 | Embed | automated | fine |
 
-## Stage 1: ingest the bibliography you already have
+## Stage 1: get the bibliography — solved, no cluster needed
 
-**This is the unlock and it needs no new data source.** `1_raw_data_ingestion.ipynb`
-queries X4Pro for physics columns only:
+**IAEA serves the EXFOR bibliographic record directly**, so this stage needs neither X4Pro
+nor cluster access:
+
+    https://nds.iaea.org/exfor/servlet/X4sGetSubent?subID=<entry>001
+
+returns the BIB section of subentry 001, which carries exactly what is missing:
+
+    INSTITUTE  (1USACOL)
+    REFERENCE  (J,PR,76,1750,4912)      <- journal, volume, page, year
+    AUTHOR     (E.MELKONIAN)
+    TITLE      SLOW NEUTRON VELOCITY SPECTROMETER STUDIES OF O2, N2, A, H2, H2O ...
+
+`exfor_bib.py` fetches and parses this, caching every response on disk so the service is
+asked for an entry at most once. `test_exfor_bib.py` covers the parser against verbatim
+records, including the awkward real-world forms: nested parentheses in report codes
+(`EANDC(E)-66`), an issue attached to the page with no comma (`917(19)`), issue labels
+containing slashes (`(2/186)`), and two-digit years with a month (`4912` = Dec 1949).
+
+### Measured coverage, 60-entry random sample
+
+| | count | share |
+|---|---|---|
+| BIB record retrieved | 60/60 | **100%** |
+| has a title | 59/60 | 98% |
+| journal article with volume | 42/60 | 70% |
+
+Reference types: 73% journal, 13% report, 5% private communication, 5% conference,
+2% thesis, 2% progress report. Extrapolated to the full corpus: **~1,535 journal articles
+and ~657 items of grey literature.**
+
+### Measured DOI resolution, using title + volume + page
+
+Strict matching — the candidate must agree on **both** volume and first page:
+
+| | resolved |
+|---|---|
+| all journal articles | 6/18 (33%) |
+| Western-indexed journals only | 6/10 (**60%**) |
+| non-Western (Atomnaya Energiya, Chinese journals, ADP, FCY/L) | 0/8 |
+
+**Zero false positives**, because a wrong article cannot agree on volume and page. The
+unresolved Western cases are mostly pre-1960 papers for which Crossref simply has no
+metadata — absent, not mismatched. Non-Western journals are not indexed by Crossref at all
+and need a different route: Russian titles usually have a translated counterpart
+(*Soviet Journal of Nuclear Physics*, *Soviet Atomic Energy*), and IAEA's INDC series
+carries translations of many others.
+
+Compare this with the author+year approach measured below: 60% correct with no false
+positives, versus 85% "matches" that were mostly wrong.
+
+---
+
+## Superseded: ingesting X4Pro reference fields
+
+The section below was the original plan, written before the IAEA endpoint was tested. It is
+kept because the X4Pro route is still worth doing if you want the reference data offline and
+in bulk without 2,193 HTTP requests — but it is no longer a blocker for anything.
+
+`1_raw_data_ingestion.ipynb` queries X4Pro for physics columns only:
 
 ```sql
 SELECT Reaction, Projectile, En, dEn, Sig, dSig, MT, DatasetID,
@@ -142,19 +199,20 @@ This is also what makes the work parallelizable across a cluster job array later
 
 ## Suggested order
 
-1. **Ingest the X4Pro reference fields.** Cheap, unblocks everything, needs one cluster
-   session. Nothing else is worth building first — and per the measurement above, building
-   resolution without it produces confidently wrong matches rather than fewer matches.
-2. **Resolve citations to DOIs** via Crossref, offline against the ingested references.
-   Produces a measurable coverage number: how many of 2,193 entries can even be identified.
-3. **Query the open sources** (OSTI, IAEA, Unpaywall, ADS) for those DOIs. Produces the
-   real answer to "how many can we get for free" — currently unknown, and worth knowing
-   before investing in anything harder.
+1. ~~Ingest the X4Pro reference fields.~~ **Done differently:** `exfor_bib.py` fetches the
+   same data from IAEA, no cluster needed. Run it over all 2,193 entries (about 20 minutes
+   at the polite delay, then cached forever).
+2. **Resolve journal articles to DOIs** via Crossref on title + volume + page. Measured at
+   60% for Western-indexed journals with zero false positives. Route Russian and Chinese
+   journals to their translated counterparts instead.
+3. **Query the open sources** (OSTI, IAEA INDC, Unpaywall, ADS) for those DOIs and for the
+   ~657 grey-literature items. Produces the real answer to "how many can we get for free" —
+   still the most decision-relevant unknown.
 4. **Wire in the quality gate + re-OCR fallback**, then embed.
 5. **Emit the ILL work queue** for the paywalled remainder.
 
-Steps 1–3 are mostly bookkeeping and cost little. They also produce the number that should
-drive the rest of the project: not "how many papers can we scrape", but "what fraction of
+Steps 1–2 are now measured; step 3 is the remaining unknown. Together they produce the
+number that should drive the rest of the project: not "how many papers can we scrape", but "what fraction of
 EXFOR is reachable at all". If that is 60%, the imputation method is broadly applicable; if
 it is 5%, the paper's framing needs to be about the accessible subset. That is worth
 knowing before writing more pipeline code.

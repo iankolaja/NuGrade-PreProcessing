@@ -1,0 +1,21 @@
+ENTRY            10320   20160211   20160603   20160524       1415
+SUBENT        10320001   20160211   20160603   20160524       1415
+BIB                  9         14
+TITLE      Fast neutron cross sections in the 2S-1d shell
+AUTHOR     (G.R.Norman,W.V.Prestwich,T.J.Kennett)
+REFERENCE  (J,CJP,50,2385,197210)
+           #doi:10.1139/p72-315
+INSTITUTE  (1CANMCM)
+FACILITY   (REAC,1CANMCM)
+DETECTOR   (SCIN) NE111 plastic scintillator.
+SAMPLE     Samples are contained in an aluminum cylinder, and
+           range in thickness from 0.12 to 0.2 atoms/b.
+METHOD     (TOF) Time-of-flight, flight path 3.68 m
+HISTORY    (19760412C) GIT
+           (19830118A) Converted to REACTION formalism.
+           (20020823A) Updated to lower case.
+           (20160211A) BP: Digitized Figs. 3-4, added doi.
+ENDBIB              14
+NOCOMMON             0          0
+ENDSUBENT           17
+ENDENTRY             1
