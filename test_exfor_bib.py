@@ -103,6 +103,15 @@ class TestParseReference:
         assert result["code"] == "EANDC(E)-66"
         assert result["year"] == 1966
 
+    def test_grey_literature_lone_number_is_a_page_not_a_volume(self):
+        """A report is identified by its code, so 52 is a page inside EANDC(E)-66.
+
+        Journals are the case that carries both: (J,PR,74,364,1948) is volume 74 page 364.
+        """
+        assert parse_reference("(P,EANDC(E)-66,52,196602)")["page"] == "52"
+        assert parse_reference("(P,EANDC(E)-66,52,196602)")["volume"] is None
+        assert parse_reference("(J,PR,74,364,1948)")["volume"] == "74"
+
     def test_conference(self):
         result = parse_reference("(C,87KIEV,2,298,1987)")
 
@@ -122,6 +131,34 @@ class TestParseReference:
         result = parse_reference("(J,ZZZQQ,1,2,1980)")
 
         assert result["journal"] == "ZZZQQ", "unknown codes must not be dropped"
+
+    def test_dual_reference_takes_the_first_alternative(self):
+        """EXFOR wraps alternative publications of one document as ((ref1)=(ref2)).
+
+        Real record for entry 22454. Parsing the whole string as the type made these
+        entries classify as neither journal nor grey literature, so they were dropped
+        from the survey entirely — 4 of 300 in the first run.
+        """
+        result = parse_reference("((S,ISINN-7,269,199905)=(S,JINR-E3-99-212,269,199905))")
+
+        assert result["type"] == "proceedings"
+        assert result["code"] == "ISINN-7"
+        assert result["page"] == "269"
+        assert result["year"] == 1999
+        assert result["alternatives"] == ["(S,JINR-E3-99-212,269,199905)"]
+
+    def test_dual_reference_across_different_types(self):
+        """Entry 20673: the same work as a lab report and as a thesis."""
+        result = parse_reference("((R,JU-RR-1/1976,1976)=(T,VALKONEN,197603))")
+
+        assert result["type"] == "report"
+        assert result["code"] == "JU-RR-1/1976"
+        assert result["alternatives"] == ["(T,VALKONEN,197603)"]
+
+    def test_dual_reference_keeps_the_raw_string(self):
+        raw = "((R,JU-RR-1/1976,1976)=(T,VALKONEN,197603))"
+
+        assert parse_reference(raw)["raw"] == raw
 
     def test_malformed_reference_does_not_raise(self):
         result = parse_reference("not a reference at all")

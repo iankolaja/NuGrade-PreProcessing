@@ -127,6 +127,18 @@ def parse_reference(reference):
     if not match:
         return result
 
+    # EXFOR wraps alternative references for the same document in an outer parenthesis
+    # joined by '=', e.g. ((S,ISINN-7,269,199905)=(S,JINR-E3-99-212,269,199905)) or
+    # ((R,JU-RR-1/1976,1976)=(T,VALKONEN,197603)). Parse the first alternative and keep the
+    # rest, rather than returning the whole string as the reference type.
+    if match.group(1).lstrip().startswith("("):
+        alternatives = re.findall(r"\(([^()]*)\)", match.group(1))
+        if alternatives:
+            primary = parse_reference(f"({alternatives[0]})")
+            primary["raw"] = reference.strip()
+            primary["alternatives"] = [f"({a})" for a in alternatives[1:]]
+            return primary
+
     # Split on commas that are not inside nested parentheses, e.g. EANDC(E)-66 or (1).
     body, depth, field = match.group(1), 0, ""
     fields = []
@@ -174,10 +186,16 @@ def parse_reference(reference):
         else:
             positional.append(token)
 
-    if len(positional) >= 1:
-        result["volume"] = positional[0] or None
-    if len(positional) >= 2:
-        result["page"] = positional[1] or None
+    # Journals carry both a volume and a page — (J,PR,74,364,1948). Grey literature is
+    # identified by its report or series code, so a lone number is a page within that
+    # document, not a volume: (P,EANDC(E)-66,52,196602), (S,ISINN-7,269,199905).
+    if len(positional) == 1 and result["type"] != "journal":
+        result["page"] = positional[0] or None
+    else:
+        if len(positional) >= 1:
+            result["volume"] = positional[0] or None
+        if len(positional) >= 2:
+            result["page"] = positional[1] or None
 
     return result
 
