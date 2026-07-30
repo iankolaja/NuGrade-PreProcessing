@@ -12,6 +12,7 @@ import pytest
 from exfor_bib import parse_reference
 from resolve_doi import (
     BIBSTEMS,
+    UNRESOLVABLE_BY_STRUCTURE,
     load_ads_token,
     resolve,
     resolve_via_ads,
@@ -169,6 +170,23 @@ class TestBibstems:
         assert BIBSTEMS["NSE"] == "NSE"
         assert "JNucE" not in BIBSTEMS.values()
         assert "NucSE" not in BIBSTEMS.values()
+
+    def test_survey_derived_mappings_are_present(self):
+        """Added after the 300-entry survey; each verified against a real volume/page."""
+        for code, bibstem in [("AP", "AnPhy"), ("JRN", "JRNC"), ("ZN/A", "ZNatA"),
+                              ("PRS/A", "RSPSA"), ("NST", "JNST"), ("JP/A", "JPhA"),
+                              ("FBS", "FBS"), ("EPJ/A", "EPJA")]:
+            assert BIBSTEMS[code] == bibstem
+
+    def test_soviet_journals_are_not_mapped(self):
+        """Not an oversight: translations renumber volumes, so structure cannot match.
+
+        AtEne, SvAtE, AtEn, JETP, ZhETF, SvJNP and BASUP were all tested against real
+        volume/page pairs from this corpus and none matched. Adding a plausible bibstem
+        here would produce wrong articles, which is worse than leaving them unresolved.
+        """
+        for code in UNRESOLVABLE_BY_STRUCTURE:
+            assert code not in BIBSTEMS, f"{code} needs title matching, not a bibstem"
 
     def test_journal_sections_share_a_bibstem(self):
         """EXFOR splits J.Nucl.Energy into parts A/B; ADS indexes them under one bibstem."""

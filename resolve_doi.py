@@ -62,7 +62,27 @@ BIBSTEMS = {
     "JP/G": "JPhG",
     "JPJ": "JPSJ",
     "PRAM": "Prama",
+
+    # Added 2026-07-29 from the 300-entry survey's unresolved list. Each was verified by
+    # querying a real (volume, page) from this corpus and confirming ADS returns that
+    # article — a stronger check than confirming the bibstem merely exists.
+    "AP": "AnPhy",         # Annals of Physics
+    "JRN": "JRNC",         # Journal of Radioanalytical and Nuclear Chemistry
+    "ZN/A": "ZNatA",       # Zeitschrift fuer Naturforschung A
+    "PRS/A": "RSPSA",      # Proceedings of the Royal Society A
+    "NST": "JNST",         # Journal of Nuclear Science and Technology
+    "JP/A": "JPhA",        # Journal of Physics A
+    "FBS": "FBS",          # Few-Body Systems
+    "EPJ/A": "EPJA",       # European Physical Journal A
 }
+
+# Soviet and Russian journals are deliberately absent. AE (Atomnaya Energiya), SJA, JET,
+# SNP, ZET and BAS were all tested against AtEne, SvAtE, AtEn, JETP, ZhETF, SvJNP and
+# BASUP using real volume/page pairs from this corpus, and none matched. The cause is not a
+# missing bibstem: the English translations renumber volumes and pages relative to the
+# Russian originals that EXFOR cites, so structured matching cannot bridge them at all.
+# These need title-based matching against the translation, or IAEA's INDC series.
+UNRESOLVABLE_BY_STRUCTURE = {"AE", "SJA", "JET", "SNP", "ZET", "BAS", "YF", "UFZ"}
 
 
 class ResolutionError(RuntimeError):
