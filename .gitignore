@@ -223,3 +223,6 @@ __marimo__/
 # Survey output (regenerable; large)
 output/coverage_survey.csv
 output/availability.csv
+output/fetch_queue.csv
+output/ill_queue.csv
+output/unreachable.csv
