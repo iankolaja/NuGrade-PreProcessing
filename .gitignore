@@ -1,3 +1,17 @@
+# Secrets — API tokens and keys. Never commit these.
+keys/
+*_token.txt
+*_api_key.txt
+
+# Fetched-response caches. Public data, but a cache is not source: re-fetchable and
+# unbounded (2,193 entries). If a shared bibliography is wanted, commit one consolidated
+# file rather than thousands of raw responses.
+cache/
+
+# Large generated data (built by the notebooks, not versioned)
+output/*.db
+pdfs/*.pdf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
