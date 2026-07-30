@@ -219,3 +219,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Survey output (regenerable; large)
+output/coverage_survey.csv
