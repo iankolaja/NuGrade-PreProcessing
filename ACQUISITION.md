@@ -41,6 +41,34 @@ PRAGMA table_info(sig1);                             -- check for unused referen
 Until this exists, every later stage is guesswork. After it exists, most of Stage 2 is
 mechanical.
 
+### This is a hard prerequisite, not an optimisation — measured
+
+Tested against Crossref on 20 real entries using only the author and year the database
+currently has:
+
+- **Matching on surname + year: 17/20 "confident" matches, almost all wrong.** Houk 1971
+  resolved to *Review of Social Economy*, Priesmeyer 1985 to *Journal of Counseling
+  Psychology*, Frisch 1946 to *Econometrica*, Allen 1955 to *BMJ*, Bailey 1946 to *Design*.
+  Common surnames match papers across all of science, and the match looks confident.
+- **Adding a physics-journal constraint: 9/20, still with false positives.** Broecker 1966
+  resolved to *Journal of Geophysical Research* — that is Wallace Broecker the geochemist,
+  not the B. Broecker who measured hydrogen cross sections. Kirilyuk landed in solid-state
+  physics. Realistically about 6 of 20 are correct, and nothing in the response
+  distinguishes them.
+
+A wrong DOI is worse than no DOI: it fetches a real paper about something else, which then
+passes every quality gate and gets embedded as if it were that experiment's report. That
+silently poisons both the RAG corpus and the KNN similarity features, and it would be very
+hard to notice afterwards.
+
+So author + year is not a usable fallback. Journal, volume and page from X4Pro are required
+to disambiguate. Any resolution step should additionally:
+
+1. Require agreement on journal **and** volume **and** first page, not just author/year.
+2. Record the match evidence per entry, so a wrong match can be traced later.
+3. Be spot-checked by hand on a sample before any bulk fetch — 20 entries is enough to
+   catch a systematically broken matcher.
+
 ## Stage 2: obtain the PDFs
 
 Split the corpus by what is actually obtainable, and do not treat it as one problem.
@@ -115,7 +143,8 @@ This is also what makes the work parallelizable across a cluster job array later
 ## Suggested order
 
 1. **Ingest the X4Pro reference fields.** Cheap, unblocks everything, needs one cluster
-   session. Nothing else is worth building first.
+   session. Nothing else is worth building first — and per the measurement above, building
+   resolution without it produces confidently wrong matches rather than fewer matches.
 2. **Resolve citations to DOIs** via Crossref, offline against the ingested references.
    Produces a measurable coverage number: how many of 2,193 entries can even be identified.
 3. **Query the open sources** (OSTI, IAEA, Unpaywall, ADS) for those DOIs. Produces the
