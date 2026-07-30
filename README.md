@@ -29,10 +29,14 @@ unit-tested without a cluster, ENDF files, or the X4Pro database:
   feature standardization (used by `3_knn_imputation.ipynb`)
 - `helper_functions.py` / `test_helper_functions.py` — EXFOR target parsing and the
   element-to-proton-number map
+- `report_quality.py` / `test_report_quality.py` — PDF-text quality gates used by
+  `2_report_embedding.ipynb`. Rejection thresholds are calibrated against real corpus
+  garbage, and the test cases are verbatim sentences the old pipeline embedded.
 
 ### Running
 1. Run 1_raw_data_ingestion.ipynb to start nugrade_data.db.
 2. Place EXFOR experiment reports in pdfs with the EXFOR Entry as the file name.
+   See ACQUISITION.md for how to scale this past hand-collection.
 3. Run 2_report_embedding.ipynb to generate tokens, sentence-wise embeddings, and similarity features.
 4. Run 3_knn_imputation.ipynb to fill in missing uncertainty values using KNN.
 5. Run `python validate_output_db.py` to check the database against the schema contract the NuGrade app enforces at startup (`nugrade/db_contract.py` in the NuGrade repo — keep the two in sync when changing the schema).

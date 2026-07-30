@@ -1,0 +1,131 @@
+# Scaling report acquisition and tokenization
+
+## The problem
+
+39 of 2,193 EXFOR entries have processed reports (1.8%). The KNN candidate pool — entries
+that have both complete uncertainties *and* an embedding — is 33 reports. Everything the
+project can conclude is bounded by that number, and the 39 were collected by hand.
+
+Three separate bottlenecks, worth attacking in this order:
+
+| Stage | Current state | Bottleneck |
+|---|---|---|
+| Identify what to fetch | manual | **no bibliographic data ingested** |
+| Obtain the PDF | manual search | genuinely hard; many are inaccessible |
+| Extract clean text | automated, unverified | 16.5% of sentences are garbage |
+| Embed | automated | fine |
+
+## Stage 1: ingest the bibliography you already have
+
+**This is the unlock and it needs no new data source.** `1_raw_data_ingestion.ipynb`
+queries X4Pro for physics columns only:
+
+```sql
+SELECT Reaction, Projectile, En, dEn, Sig, dSig, MT, DatasetID,
+       Entry, Subent, YearRef1, Author1Ini, Author1, Target, fullCode FROM sig1
+```
+
+So the database has first author and year, but no journal, volume, page, report number, or
+DOI — exactly the fields needed to look a paper up automatically. X4Pro carries EXFOR's
+full REFERENCE field (codes like `(J,PR,80,34,1950)` = Physical Review vol. 80 p. 34, and
+`(R,INDC(GER)-12,1975)` for laboratory reports).
+
+Action: inspect the X4Pro schema on the cluster and add the reference columns to the
+ingestion query, then to a `references` table. Concretely:
+
+```sql
+SELECT name FROM sqlite_master WHERE type='table';   -- find the reference/bib table
+PRAGMA table_info(sig1);                             -- check for unused reference columns
+```
+
+Until this exists, every later stage is guesswork. After it exists, most of Stage 2 is
+mechanical.
+
+## Stage 2: obtain the PDFs
+
+Split the corpus by what is actually obtainable, and do not treat it as one problem.
+
+**Openly available, safe to automate.** These have real APIs and permissive terms:
+
+- **OSTI** (`osti.gov`) — DOE laboratory reports (ORNL, LANL, ANL, KAPL). A large share of
+  US measurements from the 1950s–70s are here, full text, openly licensed. Has a documented
+  search API.
+- **IAEA NDS** (`nds.iaea.org`) — INDC reports and the nuclear data documentation series,
+  which EXFOR references heavily.
+- **Unpaywall** (`api.unpaywall.org`) — takes a DOI, returns a legal open-access copy if one
+  exists. Purpose-built for exactly this question. Requires only an email in the request.
+- **Crossref** (`api.crossref.org`) — resolves author/year/journal/volume/page to a DOI.
+  This is what Stage 1's reference data feeds.
+- **NASA ADS** (`api.adsabs.harvard.edu`) — excellent coverage of older physics literature
+  and often links scanned full text for pre-1990 articles. Free API key.
+- **arXiv** — a small slice, but free.
+
+Rate-limit politely, cache every response, and identify yourself in the User-Agent. These
+are shared research services.
+
+**Paywalled.** Do not build a bulk downloader for publisher sites (Elsevier, Springer, APS
+and similar). It violates their terms, gets the campus IP range blocked — which harms the
+whole group, not just this project — and is the single most likely way to turn a research
+tool into an incident. Your Berkeley access is for reading papers, not for automated bulk
+retrieval.
+
+Instead: have the pipeline emit a **work queue** — a CSV of entries it could not obtain,
+with the resolved citation and a DOI link. Then use interlibrary loan, which handles bulk
+requests properly and is free to you. This converts an open-ended search problem into a
+list someone can work through, which is the actual win over what you did by hand.
+
+**Genuinely inaccessible.** Private communications, untranslated foreign-language theses,
+lab reports that were never digitized. Record them as permanently unavailable with a reason
+so nobody re-investigates them later. Being able to say "this entry is unobtainable because
+X" is a legitimate output.
+
+## Stage 3: extract clean text, verifiably
+
+`report_quality.py` handles this, with thresholds derived from measuring the existing
+corpus rather than guessed. Applied to the 7,193 sentences currently stored:
+
+- 1,184 sentences (16.5%) are rejected — OCR damage, bibliography residue, journal
+  furniture, fragments, non-English text
+- 3 of 39 documents are flagged for re-OCR rather than embedded: entries 30077 (70% of
+  sentences unusable), 30390 (68%), and 40061 (too few usable sentences)
+
+Why this matters beyond tidiness: every stored sentence is embedded and therefore
+retrievable by the agent's RAG tools, and the `{category}_max_sim` features are a **max**
+over a report's sentences. One mangled line that happens to embed near a template inflates
+that report's similarity score and corrupts the KNN neighbours chosen for it. Garbage in
+this pipeline is not inert.
+
+Most of these reports are scanned mid-century papers, so a poor text layer is the norm.
+For documents the gate rejects, re-OCR with `ocrmypdf --redo-ocr` (Tesseract) before
+giving up; that recovers a meaningful fraction and costs nothing but CPU.
+
+## Stage 4: orchestrate
+
+Make the pipeline resumable and idempotent, because it will be interrupted and because
+most runs should do nothing:
+
+- One row per entry in an `acquisition_status` table: `pending`, `resolved`, `fetched`,
+  `extracted`, `embedded`, `unavailable`, with a reason and a timestamp.
+- Cache every HTTP response on disk keyed by URL. Re-running should hit cache, not APIs.
+- Never re-fetch or re-OCR a document that is already `embedded`.
+- Process in small batches and commit after each, so a crash costs one batch.
+
+This is also what makes the work parallelizable across a cluster job array later.
+
+## Suggested order
+
+1. **Ingest the X4Pro reference fields.** Cheap, unblocks everything, needs one cluster
+   session. Nothing else is worth building first.
+2. **Resolve citations to DOIs** via Crossref, offline against the ingested references.
+   Produces a measurable coverage number: how many of 2,193 entries can even be identified.
+3. **Query the open sources** (OSTI, IAEA, Unpaywall, ADS) for those DOIs. Produces the
+   real answer to "how many can we get for free" — currently unknown, and worth knowing
+   before investing in anything harder.
+4. **Wire in the quality gate + re-OCR fallback**, then embed.
+5. **Emit the ILL work queue** for the paywalled remainder.
+
+Steps 1–3 are mostly bookkeeping and cost little. They also produce the number that should
+drive the rest of the project: not "how many papers can we scrape", but "what fraction of
+EXFOR is reachable at all". If that is 60%, the imputation method is broadly applicable; if
+it is 5%, the paper's framing needs to be about the accessible subset. That is worth
+knowing before writing more pipeline code.
