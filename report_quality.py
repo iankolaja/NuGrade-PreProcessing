@@ -182,13 +182,27 @@ def clean_sentences(sentences, min_words=7):
     return kept
 
 
-def document_quality_report(sentences, min_usable_sentences=20, max_rejection_rate=0.6):
+def document_quality_report(sentences, min_usable_sentences=20, max_rejection_rate=0.6,
+                            healthy_yield=100):
     """Decide whether a document's extracted text is good enough to embed.
 
-    A document that loses most of its sentences to the quality gate usually has a bad text
-    layer rather than bad writing, and should be re-OCR'd rather than embedded. Returning
-    the diagnosis instead of silently proceeding is the point: the current pipeline embeds
-    whatever it gets.
+    Two different failures are being distinguished, and only one of them is fatal:
+
+      * too little usable text — the text layer failed, so there is nothing to embed
+      * a high rejection rate — most extracted "sentences" were discarded
+
+    A high rejection rate alone does not condemn a document. Scanned laboratory reports are
+    full of tables, figure captions and column headers, so most fragments are legitimately
+    discarded while the surviving prose is perfectly good. Measured on the OSTI reports:
+    ORNL-4805 rejects 81% of its 567 fragments and still yields 106 clean methodology
+    sentences ("a peak was stripped by drawing a background beneath it, subtracting the
+    background..."), while what it discarded was noise like "z 3 u." and ".-.". That is the
+    sentence filter succeeding, not the document failing.
+
+    So the rate only matters when the absolute yield is *also* poor: below ``healthy_yield``
+    a high rejection rate is evidence the OCR is untrustworthy, and above it the filter has
+    demonstrably done its job. The original 60% limit was calibrated on hand-picked journal
+    articles and rejected 29 of 59 fetched lab reports outright.
 
     Returns a dict with ``usable``, the kept sentences, and the reason if unusable.
     """
@@ -204,9 +218,10 @@ def document_quality_report(sentences, min_usable_sentences=20, max_rejection_ra
             f"only {len(kept)} usable sentences (need {min_usable_sentences}); "
             "likely a scan with no usable text layer"
         )
-    if rejection_rate > max_rejection_rate:
+    elif rejection_rate > max_rejection_rate and len(kept) < healthy_yield:
         reasons.append(
-            f"rejected {rejection_rate:.0%} of sentences (limit {max_rejection_rate:.0%}); "
+            f"rejected {rejection_rate:.0%} of sentences (limit {max_rejection_rate:.0%}) "
+            f"and kept only {len(kept)} (need {healthy_yield} to trust a rate that high); "
             "likely OCR damage or a non-English report"
         )
 

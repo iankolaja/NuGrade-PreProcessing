@@ -169,7 +169,31 @@ class TestDocumentQualityReport:
 
         assert not report["usable"]
         assert report["recommendation"] == "re-OCR or exclude"
-        assert any("rejected" in r for r in report["reasons"])
+        assert report["reasons"]
+
+    def test_a_high_rejection_rate_alone_does_not_condemn_a_document(self):
+        """Scanned lab reports are full of tables, so most fragments are legitimately
+        discarded while the surviving prose is fine.
+
+        Measured on ORNL-4805: 81% of 567 fragments rejected, 106 clean methodology
+        sentences kept. The original 60% limit rejected 29 of 59 fetched reports outright.
+        """
+        sentences = OCR_DAMAGED * 400 + GOOD_SENTENCES * 25   # 82% rejected, 125 kept
+
+        report = document_quality_report(sentences)
+
+        assert report["rejection_rate"] > 0.6
+        assert report["kept_sentences"] >= 100
+        assert report["usable"], "a healthy yield must survive a high rejection rate"
+
+    def test_a_high_rejection_rate_with_a_poor_yield_is_still_rejected(self):
+        """Below the healthy yield the rate is evidence the OCR cannot be trusted."""
+        sentences = OCR_DAMAGED * 400 + GOOD_SENTENCES * 5    # 96% rejected, 25 kept
+
+        report = document_quality_report(sentences)
+
+        assert not report["usable"]
+        assert any("kept only" in r for r in report["reasons"])
 
     def test_too_few_sentences_is_flagged(self):
         report = document_quality_report(GOOD_SENTENCES)  # only 5
