@@ -229,3 +229,5 @@ output/unreachable.csv
 .DS_Store
 output/fetch_log.csv
 output/iaea_fetch_log.csv
+output/ocr_log.csv
+output/ocr/
