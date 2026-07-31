@@ -1,0 +1,114 @@
+{
+  "_provenance": "Hand-curated by Ian Kolaja while collecting the first ~50 report PDFs. Recovered from a markdown cell in 3_knn_imputation.ipynb before that notebook became a thin caller. The cell was never executed, so this was archived intent rather than live data.",
+  "_why_kept": "The only human-labelled check on the automated results in output/availability.csv. On entries labelled 'paywalled' the automated Unpaywall check agrees 5/5. On 'available' the two disagree, most likely because 'available' here means reachable through Berkeley's library, whereas Unpaywall measures open access -- a stricter and different question. That gap is worth remembering when quoting either number.",
+  "_structure": {
+    "with_uncertainty": "EXFOR entries that DO report uncertainties (KNN candidates)",
+    "without_uncertainty": "EXFOR entries MISSING uncertainties (imputation targets)"
+  },
+  "_categories": {
+    "available": "full text obtainable by the author",
+    "paywalled": "behind a publisher paywall",
+    "conference": "conference proceedings",
+    "private": "private communication; no published document exists",
+    "lab_report": "laboratory report",
+    "data_only": "EXFOR entry carries data but no retrievable report",
+    "french": "French-language report",
+    "russian": "Russian-language report"
+  },
+  "with_uncertainty": {
+    "available": [
+      "13632",
+      "12988",
+      "22052",
+      "10725",
+      "13587",
+      "12972",
+      "13840",
+      "13907",
+      "13588",
+      "30077",
+      "20638",
+      "10982",
+      "10663",
+      "12751",
+      "20066",
+      "10193",
+      "21193",
+      "12830",
+      "11679",
+      "30390",
+      "12853",
+      "30502",
+      "30234",
+      "22451",
+      "13753",
+      "20789",
+      "40061",
+      "30248",
+      "22580",
+      "22838"
+    ],
+    "paywalled": [
+      "10724",
+      "14349",
+      "12941",
+      "23534",
+      "23605"
+    ],
+    "conference": [
+      "22314",
+      "13730",
+      "22331",
+      "12897",
+      "12971",
+      "13734",
+      "10955",
+      "13511",
+      "21325",
+      "20939"
+    ],
+    "private": [
+      "22333",
+      "13767",
+      "22332",
+      "22315",
+      "41225",
+      "14261",
+      "13768",
+      "22316"
+    ],
+    "lab_report": [
+      "14249",
+      "12816",
+      "11010",
+      "10618"
+    ],
+    "data_only": [
+      "22360",
+      "20435",
+      "21270",
+      "20300",
+      "10366",
+      "21146",
+      "20718",
+      "22360"
+    ],
+    "french": [
+      "20118",
+      "20445"
+    ],
+    "russian": [
+      "40729"
+    ]
+  },
+  "without_uncertainty": {
+    "available": [
+      "22764",
+      "12278",
+      "12886",
+      "20115",
+      "11913",
+      "11601"
+    ]
+  }
+}

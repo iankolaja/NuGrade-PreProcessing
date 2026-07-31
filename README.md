@@ -1,84 +1,153 @@
 # NuGrade-PreProcessing
-A collection of notebooks for processing raw nuclear data for use in NuGrade. For every EXFOR measurement, a cross section value from evaluations like ENDF is interpolated, and error metrics are precomputed. The experimental reports from EXFOR are also tokenized and turned into sentence-wise embeddings. Missing uncertainty values are imputed using KNN. 
 
-### Pre-requisites 
-The following packages are needed to run NuGrade locally:
-- X4Pro database (https://nds.iaea.org/cdroms/#x4pro1)
-- ACE files for desired evaluations such as ENDF8
-- Pandas
-- PyTorch 
-- NumPy
-- OpenMC (needed only to read ACE/HDF5 evaluation files, i.e. only where
-  `1_raw_data_ingestion.ipynb` runs. It is imported lazily, so the rest of the
-  repo — including the test suite — works without it.)
-- Spacy
-- PyMuPDF
-- Transformers
-- Sklearn
+Builds the SQLite database the NuGrade app consumes. For every EXFOR measurement a cross
+section from an evaluation such as ENDF/B-VIII is interpolated and error metrics are
+precomputed; experimental reports are turned into sentence embeddings; and missing
+uncertainties are imputed by KNN over report similarity.
 
-### Testing
+Everything runs as a plain Python script — no Jupyter required. The notebooks are thin
+wrappers around the same modules, kept for interactive exploration.
 
-The numerical work is extracted out of the notebooks into modules so it can be
-unit-tested without a cluster, ENDF files, or the X4Pro database:
+## Running
 
-    pytest
+```bash
+python run_pipeline.py --stages 1,2,3 --dry-run   # validate configuration, run nothing
+python run_pipeline.py --stages 1,2,3             # everything
+python run_pipeline.py --stages 1                 # ingestion only (the usual cluster job)
+python run_pipeline.py --stages 3                 # re-impute an existing database
+```
 
-- `ingestion.py` / `test_ingestion.py` — per-channel assumed uncertainties, chi-squared,
-  relative error (used by `1_raw_data_ingestion.ipynb`)
-- `imputation.py` / `test_imputation.py` — composite distance, neighbour weighting,
-  feature standardization (used by `3_knn_imputation.ipynb`)
-- `helper_functions.py` / `test_helper_functions.py` — EXFOR target parsing and the
-  element-to-proton-number map
-- `report_quality.py` / `test_report_quality.py` — PDF-text quality gates used by
-  `2_report_embedding.ipynb`. Rejection thresholds are calibrated against real corpus
-  garbage, and the test cases are verbatim sentences the old pipeline embedded.
+Individual stages also run on their own:
 
-### Running
-1. Run 1_raw_data_ingestion.ipynb to start nugrade_data.db.
-2. Place EXFOR experiment reports in pdfs with the EXFOR Entry as the file name.
-   See ACQUISITION.md for how to scale this past hand-collection.
-3. Run 2_report_embedding.ipynb to generate tokens, sentence-wise embeddings, and similarity features.
-4. Run 3_knn_imputation.ipynb to fill in missing uncertainty values using KNN.
-5. Run `python validate_output_db.py` to check the database against the schema contract the NuGrade app enforces at startup (`nugrade/db_contract.py` in the NuGrade repo — keep the two in sync when changing the schema).
-6. Place nugrade_data.db in the /data directory of your NuGrade installation.
+```bash
+python stage1_ingestion.py --phase measurements
+python stage2_embedding.py --pdf-dir pdfs
+python stage3_imputation.py
+```
 
-Note: the sentence embeddings are attention-mask-weighted **mean-pooled** SciBERT vectors (see `get_embeddings_batch` in 2_report_embedding.ipynb). The NuGrade app embeds search queries with the identical pooling; the two must never diverge.
+Exit codes: `0` success, `1` a stage failed or the finished database violates the app
+contract, `2` a prerequisite is missing or the configuration is unusable.
 
-### Repairing an existing database
+See `slurm_example.sh` for a cluster submission template.
 
-`repair_derived_columns.py` fixes two ingestion bugs in an already-built database without
-re-running the notebooks against the cluster (the interpolated evaluation cross sections
-are already stored in the `endf8` / `endf7-1` columns):
+### Configuration
 
-    python repair_derived_columns.py output/nugrade_data.db output/nugrade_data_fixed.db
-    python validate_output_db.py output/nugrade_data_fixed.db
+Settings resolve **command-line flag > environment variable > default**. Environment
+variables suit SLURM scripts; `python run_pipeline.py --help` lists every flag with its
+variable.
 
-It writes a repaired copy and never modifies its input. Afterwards, re-run
-`3_knn_imputation.ipynb` against the repaired file so the KNN imputation uses corrected
-inputs.
+| Variable | Purpose |
+|---|---|
+| `NUGRADE_X4_DB` | X4Pro sqlite database |
+| `NUGRADE_ENDF71_TEMPLATE` | ACE path template, with `<symbol>` and `<ZAID>` |
+| `NUGRADE_ENDF8_TEMPLATE` | as above, for ENDF/B-VIII |
+| `NUGRADE_PDF_DIR` | report PDFs, named by EXFOR entry (`10283.pdf`) |
+| `NUGRADE_OUTPUT_DIR` | output directory; the database path derives from it |
+| `NUGRADE_K_NEIGHBORS` | KNN neighbours (default 5) |
+| `NUGRADE_LOG_EVERY` | progress line cadence |
 
-### Rebuilding on the cluster and comparing
+`--dry-run` validates every path before any work starts, and names the flag or variable to
+set for each problem. Worth doing before spending a cluster allocation.
 
-`1_raw_data_ingestion.ipynb` is the only notebook that needs cluster access (ENDF/ACE
-files and the X4Pro database). Notebook 2 needs the report PDFs; notebook 3 needs only
-the database. So a rebuild does not require re-running everything:
+### Resuming
 
-1. On the cluster, run `1_raw_data_ingestion.ipynb` into a fresh `output/`.
-2. Copy the resulting `nugrade_data.db` down.
-3. Graft the embedding tables from your existing database, so notebook 2 and the PDFs are
-   not needed — `report_embeddings` and `sentence_embeddings` are keyed on EXFOR_Entry and
-   are unaffected by an ingestion re-run:
+Stage 1 runs for hours and is resumable per reaction channel: each channel's rows and its
+progress marker are written in one transaction, so an interrupted job continues at the next
+channel rather than starting over. Stage 2 resumes per report. Pass `--no-resume` to
+recompute from scratch.
 
-       python graft_embedding_tables.py old/nugrade_data.db new/nugrade_data.db
+## Stages
 
-4. Run `3_knn_imputation.ipynb` against the new database to redo the KNN imputation.
-5. Compare against the previous build and confirm the fixes landed:
+| Stage | Needs | Produces |
+|---|---|---|
+| `1` ingestion | X4Pro + cluster ACE files | `measurements`, `all_reactions.csv` |
+| `1b` aggregates | the database only | `subentries`, `entries` |
+| `2` embedding | report PDFs, SciBERT | `report_embeddings`, `sentence_embeddings` |
+| `3` imputation | the database only | `dData_adopted`, `uncertainty_source` |
 
-       python compare_databases.py old/nugrade_data.db new/nugrade_data.db
-       python validate_output_db.py new/nugrade_data.db
+Naming stage `1` runs `1b` too. Stages always execute in dependency order regardless of the
+order given.
 
-`compare_databases.py` checks that raw EXFOR quantities are unchanged (only derived
-columns should move), that no derived uncertainty or chi-squared is negative or infinite,
-and that chi-squared matches `((Data - eval) / sigma)^2`. Both scripts are read-only with
-respect to the databases they are given, except for `graft_embedding_tables.py`, which
-writes only to its destination.
+## Pre-requisites
+
+- X4Pro database (https://nds.iaea.org/cdroms/#x4pro1) — stage 1 only
+- ACE files for the desired evaluations — stage 1 only
+- OpenMC — stage 1 only, imported lazily so the rest of the repo and the whole test suite
+  work without it
+- NumPy, Pandas — always
+- PyTorch, Transformers, spaCy, PyMuPDF — stage 2 only, also imported lazily
+
+## Testing
+
+```bash
+pytest
+```
+
+The full suite runs on a laptop with no cluster, no ACE files, no X4Pro database, and
+without torch, spaCy or PyMuPDF installed — heavy dependencies sit behind injectable
+interfaces (`evaluations.py`, `embedding_backend.py`) that tests replace with analytic
+stubs.
+
+| Module | Tests |
+|---|---|
+| `pipeline_config.py` | flag/environment precedence, prerequisite validation |
+| `ingestion.py` | assumed uncertainties, chi-squared, relative error |
+| `imputation.py` | composite distance, neighbour weighting, standardisation |
+| `report_quality.py` | PDF-text quality gates, calibrated on real corpus garbage |
+| `helper_functions.py` | EXFOR target parsing, element-to-proton-number map |
+| `exfor_bib.py` / `resolve_doi.py` | bibliographic parsing, DOI resolution |
+| `stage1/2/3`, `run_pipeline.py` | orchestration: resume, ordering, persistence, schema |
+
+## The database contract
+
+The NuGrade app enforces a schema contract at startup (`nugrade/db_contract.py` in that
+repo). Check a build against it:
+
+```bash
+python validate_output_db.py output/nugrade_data.db
+```
+
+`run_pipeline.py` runs this automatically after stage 3 and fails if the database would be
+rejected — so a cluster job cannot quietly ship an unusable file. Keep the two in sync when
+changing the schema.
+
+Sentence embeddings are attention-mask-weighted **mean-pooled** SciBERT vectors. The app
+embeds search queries with identical pooling; if the two diverge, queries and documents land
+in different vector spaces and retrieval silently degrades.
+
+## Repairing an existing database
+
+`repair_derived_columns.py` fixes the chi-squared formula and negative derived
+uncertainties in an already-built database without cluster access, since the interpolated
+evaluation cross sections are already stored:
+
+```bash
+python repair_derived_columns.py output/nugrade_data.db output/nugrade_data_fixed.db
+python validate_output_db.py output/nugrade_data_fixed.db
+python run_pipeline.py --stages 3 --db output/nugrade_data_fixed.db
+```
+
+It writes a repaired copy and never modifies its input.
+
+## Rebuilding and comparing
+
+Only stage 1 needs the cluster. If the report PDFs are not where you are rebuilding, the
+embedding tables can be carried across instead of regenerated — they key on EXFOR entry and
+are unaffected by an ingestion re-run:
+
+```bash
+python graft_embedding_tables.py old/nugrade_data.db new/nugrade_data.db
+python run_pipeline.py --stages 3 --output-dir new/
+python compare_databases.py old/nugrade_data.db new/nugrade_data.db
+```
+
+`compare_databases.py` checks that raw EXFOR quantities are unchanged — only derived columns
+should move — that no derived uncertainty or chi-squared is negative or infinite, and that
+chi-squared matches `((Data - eval) / sigma)^2`.
+
+## Corpus acquisition
+
+`ACQUISITION.md` covers scaling the report corpus past hand-collection: fetching EXFOR
+bibliographic records, resolving DOIs, and checking open-access availability. The supporting
+tools are `exfor_bib.py`, `resolve_doi.py`, `survey_coverage.py`, `check_availability.py`
+and `make_work_queues.py`.

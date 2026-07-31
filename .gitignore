@@ -226,3 +226,4 @@ output/availability.csv
 output/fetch_queue.csv
 output/ill_queue.csv
 output/unreachable.csv
+.DS_Store
