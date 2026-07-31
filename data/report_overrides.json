@@ -51,6 +51,56 @@
     "11293": {
       "reason": "shares ORNL-2501 p 18 (1958) with entry 11446, cited at a different page",
       "duplicate_of": "11446"
+    },
+    "20177": {
+      "reason": "IAEA scan of EANDC(E)-49 p 42 (1963) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "20183": {
+      "reason": "IAEA scan of EANDC(E)-76 p 106 (1967) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "20184": {
+      "reason": "IAEA scan of EANDC(E)-76 p 107 (1967) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "20185": {
+      "reason": "IAEA scan of EANDC(E)-76 p 107 (1967) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "20187": {
+      "reason": "IAEA scan of INDC(NOR)-1 p 2 (1972) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "20899": {
+      "reason": "IAEA scan of EANDC(E)-66 p 42 (1966) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "20906": {
+      "reason": "IAEA scan of EANDC(E)-66 vol 5 (1966) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "21146": {
+      "reason": "IAEA scan of EANDC(E)-66 p 52 (1966) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "21503": {
+      "reason": "IAEA scan of EANDC(E)-76 p 51 (1967) has no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "23384": {
+      "reason": "IAEA scan of INDSWG-90 p 2 (1965) has no text layer",
+      "skip": true,
+      "action": "ocr"
     }
   }
 }

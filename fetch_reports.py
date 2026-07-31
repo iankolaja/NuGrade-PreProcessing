@@ -49,6 +49,12 @@ ALLOWED_HOSTS = {
     "ir.lzu.edu.cn": "Lanzhou University institutional repository",
     "www.epj-conferences.org": "EPJ Web of Conferences — open access proceedings",
     "epj-conferences.org": "EPJ Web of Conferences — open access proceedings",
+    # Added after review: institutional and national repositories following the same model
+    # as eScholarship — they exist to distribute their institution's output.
+    "digitalcommons.uri.edu": "University of Rhode Island repository",
+    "dspace.library.uu.nl": "Utrecht University repository",
+    "www.dora.lib4ri.ch": "DORA — Swiss federal research institutes repository",
+    "www.jstage.jst.go.jp": "J-STAGE — Japan Science and Technology Agency platform",
 }
 
 # Named so the report can explain the exclusion rather than just listing a host.
@@ -61,6 +67,9 @@ PUBLISHER_HOSTS = {
     "www.sciencedirect.com": "Elsevier",
     "doi.org": "DOI resolver — redirects to a publisher platform",
     "dx.doi.org": "DOI resolver — redirects to a publisher platform",
+    "iopscience.iop.org": "IOP Publishing",
+    "royalsocietypublishing.org": "The Royal Society",
+    "www.publish.csiro.au": "CSIRO Publishing",
 }
 
 PDF_MAGIC = b"%PDF-"
