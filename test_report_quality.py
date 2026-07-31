@@ -141,17 +141,50 @@ class TestCitationDetection:
 
 
 class TestStripReferenceList:
-    def test_cuts_at_heading(self):
-        text = "methods were standard.\nReferences\n1. smith, phys rev 80 34"
+    def test_cuts_a_trailing_reference_list(self):
+        text = "methods were standard. " * 40 + "\nReferences\n1. smith, phys rev 80 34"
         assert "smith" not in strip_reference_list(text)
 
     def test_cuts_at_acknowledgments(self):
-        text = "we conclude the value is correct.\nAcknowledgments\nwe thank the operators"
+        text = ("we conclude the value is correct. " * 40
+                + "\nAcknowledgments\nwe thank the operators")
         assert "operators" not in strip_reference_list(text)
 
     def test_returns_text_unchanged_when_no_heading(self):
         text = "methods were standard and the detector was calibrated."
         assert strip_reference_list(text) == text
+
+    def test_does_not_truncate_a_multi_chapter_report(self):
+        """A compiled lab report has a reference list per chapter.
+
+        ANL-7710 carries 71 headings with the first 1.4% of the way in; cutting there
+        discarded 98.6% of the document, including every measurement description. Those
+        citation lines are removed sentence by sentence by looks_like_citation instead.
+        """
+        chapter = ("the detector was calibrated with a standard source. " * 10
+                   + "\nREFERENCES\n1. a. smith: phys. rev., 80, 34 (1950).\n")
+        text = chapter * 8
+
+        result = strip_reference_list(text)
+
+        assert len(result) == len(text), "a multi-chapter report must not be truncated"
+
+    def test_does_not_cut_a_heading_early_in_the_document(self):
+        """One heading near the front is a table of contents entry, not the reference list."""
+        text = "\nReferences\n" + "real methodology prose follows for a long while. " * 60
+
+        assert len(strip_reference_list(text)) == len(text)
+
+    def test_still_cuts_two_trailing_sections(self):
+        """Acknowledgments followed by references is a normal single-article ending."""
+        text = ("the measurement is described here. " * 40
+                + "\nAcknowledgments\nwe thank the operators.\n"
+                + "\nReferences\n1. a. smith: phys rev 80 34\n")
+
+        result = strip_reference_list(text)
+
+        assert "operators" not in result
+        assert "measurement is described" in result
 
 
 class TestDocumentQualityReport:

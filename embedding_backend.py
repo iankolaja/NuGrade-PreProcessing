@@ -106,17 +106,49 @@ class HashEmbedder:
 
 @dataclass
 class SpacySplitter:
-    """Production sentence splitter."""
+    """Production sentence splitter.
+
+    Two accommodations for the size of these documents. Only the sentence segmenter is
+    loaded — the tagger, parser and NER are disabled — because they cost roughly 1 GB of
+    working memory per 100,000 characters and contribute nothing to sentence boundaries.
+    And text is processed in chunks, because spaCy refuses input over ``max_length``
+    outright: ANL-7710 is 1.5 M characters and raised ValueError, which would have taken
+    stage 2 down on the largest reports in the corpus.
+    """
 
     model_name: str = "en_core_web_sm"
+    chunk_size: int = 400_000
     _nlp: object = field(default=None, repr=False)
 
-    def split(self, text):
-        if self._nlp is None:
-            import spacy
+    def _load(self):
+        if self._nlp is not None:
+            return
+        import spacy
 
-            self._nlp = spacy.load(self.model_name)
-        return [sentence.text.strip() for sentence in self._nlp(text).sents]
+        # senter is a lightweight statistical segmenter; the parser would also segment but
+        # brings the memory cost that forces max_length in the first place.
+        self._nlp = spacy.load(self.model_name, exclude=["ner", "lemmatizer"])
+        if "senter" in self._nlp.pipe_names:
+            self._nlp.enable_pipe("senter")
+
+    def _chunks(self, text):
+        """Split on paragraph breaks near the chunk size, so no sentence is cut in half."""
+        start = 0
+        while start < len(text):
+            end = min(start + self.chunk_size, len(text))
+            if end < len(text):
+                boundary = text.rfind("\n", start + self.chunk_size // 2, end)
+                if boundary > start:
+                    end = boundary
+            yield text[start:end]
+            start = end
+
+    def split(self, text):
+        self._load()
+        sentences = []
+        for chunk in self._chunks(text):
+            sentences.extend(s.text.strip() for s in self._nlp(chunk).sents)
+        return [s for s in sentences if s]
 
 
 @dataclass

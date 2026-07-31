@@ -127,14 +127,28 @@ def looks_like_citation(sentence):
     return initials >= 2 and len(words) <= 14
 
 
-def strip_reference_list(text):
-    """Cut everything from the first reference/acknowledgments heading onward.
+def strip_reference_list(text, max_sections=2, tail_fraction=0.4):
+    """Remove a trailing reference list, without truncating a multi-chapter report.
 
-    Returns the text unchanged when no heading is present; use ``looks_like_citation`` on
-    individual sentences to catch reports that never had one.
+    A single article has one reference list at the end, and cutting there is right. A
+    compiled laboratory report has one per chapter, and cutting at the first destroys the
+    document: ANL-7710 carries 71 reference headings, the earliest 1.4% of the way in, so
+    truncating there discarded 98.6% of the text — every measurement description in it.
+
+    So truncation applies only when the headings look like a single trailing list: at most
+    ``max_sections`` of them, and the cut point inside the last ``tail_fraction`` of the
+    document. Otherwise the text is returned whole and the citation lines are left to
+    ``looks_like_citation``, which removes them sentence by sentence and is what catches
+    reports with no heading at all.
     """
-    match = REFERENCE_HEADING.search(text)
-    return text[: match.start()] if match else text
+    matches = list(REFERENCE_HEADING.finditer(text))
+    if not matches or len(matches) > max_sections:
+        return text
+
+    cut = matches[0].start()
+    if not text or cut < len(text) * (1 - tail_fraction):
+        return text
+    return text[:cut]
 
 
 def is_bad_sentence(sentence, min_words=7):
