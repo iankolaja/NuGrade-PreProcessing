@@ -70,12 +70,26 @@ order given.
 
 ## Pre-requisites
 
+```bash
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm     # stage 2 only
+conda install -c conda-forge openmc          # stage 1 only; not a pip package
+```
+
+Data, which is not in the repository:
+
 - X4Pro database (https://nds.iaea.org/cdroms/#x4pro1) — stage 1 only
 - ACE files for the desired evaluations — stage 1 only
-- OpenMC — stage 1 only, imported lazily so the rest of the repo and the whole test suite
-  work without it
-- NumPy, Pandas — always
-- PyTorch, Transformers, spaCy, PyMuPDF — stage 2 only, also imported lazily
+- **Report PDFs — stage 2 only.** These are gitignored (662 MB) and do **not** arrive with a
+  `git pull`. Either copy `pdfs/` across:
+
+      rsync -avz --progress pdfs/ user@cluster:/path/to/NuGrade-PreProcessing/pdfs/
+
+  or rebuild them there with `fetch_reports.py`, `fetch_iaea.py` and `ocr_reports.py`, which
+  takes about an hour and needs `ocrmypdf` installed.
+
+Every heavy dependency is imported lazily, so stages 1 and 3 and the entire test suite run
+without OpenMC, torch, spaCy or PyMuPDF installed.
 
 ## Testing
 

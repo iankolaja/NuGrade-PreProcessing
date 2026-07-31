@@ -1,0 +1,32 @@
+# Python dependencies for the preprocessing pipeline.
+#
+#     pip install -r requirements.txt
+#     python -m spacy download en_core_web_sm      # stage 2 only; not a pip package
+#
+# Versions are the ones this pipeline is known to run on, floored rather than pinned so a
+# cluster module system can satisfy them. Stage 1 additionally needs OpenMC, which is not
+# installable this way — see below.
+
+# --- always needed ---
+numpy>=1.24
+pandas>=2.0
+
+# --- stage 2 only (report embedding) ---
+# Each is imported lazily, so stages 1 and 3 and the whole test suite run without them.
+pymupdf>=1.23          # PDF text extraction
+spacy>=3.7             # sentence segmentation; also needs en_core_web_sm, see above
+torch>=2.0             # SciBERT backend
+transformers>=4.30     # SciBERT
+
+# --- development ---
+pytest>=7.0
+
+# --- not installable here ---
+# OpenMC is required by stage 1 to read ACE evaluation files and is normally provided by
+# the cluster's module system or a conda channel:
+#     conda install -c conda-forge openmc
+# It is imported lazily, so everything except stage 1's cross-section reads works without it.
+#
+# ocrmypdf is only needed to run ocr_reports.py over scanned PDFs, and is a system package:
+#     brew install ocrmypdf        (macOS)
+#     apt install ocrmypdf         (Debian/Ubuntu)
