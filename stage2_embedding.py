@@ -32,6 +32,12 @@ from embedding_backend import (
     splitter_from_config,
 )
 from pipeline_config import Config, ConfigError, add_config_arguments, check_or_raise
+from report_overrides import (
+    extract_text_for,
+    gate_settings,
+    load_overrides,
+    record_applied,
+)
 from report_quality import document_quality_report, strip_reference_list
 from stage_result import ProgressTracker, StageResult, null_printer, printer
 
@@ -121,13 +127,22 @@ def existing_entries(db_path):
         con.close()
 
 
-def read_report(path, *, splitter, extract_text):
-    """PDF to quality-gated sentences. Returns the report dict from report_quality."""
-    text = extract_text(path)
+def read_report(path, *, splitter, extract_text, override=None):
+    """PDF to quality-gated sentences. Returns the report dict from report_quality.
+
+    An override may restrict extraction to certain pages, force reference stripping on or
+    off, or adjust the quality thresholds for this document alone.
+    """
+    text = extract_text_for(path, override, extract_text)
     text = normalize_text(text)
-    text = strip_reference_list(text)
+
+    strip = True if override is None or override.strip_references is None \
+        else override.strip_references
+    if strip:
+        text = strip_reference_list(text)
+
     text = remove_page_artifacts(text)
-    return document_quality_report(splitter.split(text))
+    return document_quality_report(splitter.split(text), **gate_settings(override))
 
 
 def embed_report(entry, sentences, templates, embedder):
@@ -174,12 +189,23 @@ def persist_report(db_path, features, sentence_rows):
         con.close()
 
 
-def run(config, *, embedder=None, splitter=None, extract_text=None, progress=None):
-    """Embed every report PDF. Returns a StageResult."""
+def run(config, *, embedder=None, splitter=None, extract_text=None, progress=None,
+        overrides=None):
+    """Embed every report PDF. Returns a StageResult.
+
+    ``overrides`` maps EXFOR entry to per-report handling rules; by default they are read
+    from data/report_overrides.json. See report_overrides.py for why they live in a file
+    rather than in the database.
+    """
     emit = progress or printer("2")
     started = time.monotonic()
     check_or_raise(config, "2")
     config.ensure_directories()
+
+    overrides = load_overrides() if overrides is None else overrides
+    if overrides:
+        emit(f"loaded {len(overrides)} per-report overrides")
+    applied = []
 
     embedder = embedder or embedder_from_config(config)
     splitter = splitter or splitter_from_config(config)
@@ -197,7 +223,8 @@ def run(config, *, embedder=None, splitter=None, extract_text=None, progress=Non
     templates = load_templates(config.template_file, embedder)
 
     warnings = []
-    counts = {"embedded": 0, "skipped_quality": 0, "skipped_existing": 0, "sentences": 0}
+    counts = {"embedded": 0, "skipped_quality": 0, "skipped_existing": 0,
+              "skipped_override": 0, "sentences": 0}
     tracker = ProgressTracker(len(pdfs), emit, every=config.log_every, unit="reports")
 
     for path in pdfs:
@@ -207,7 +234,19 @@ def run(config, *, embedder=None, splitter=None, extract_text=None, progress=Non
             tracker.advance()
             continue
 
-        report = read_report(path, splitter=splitter, extract_text=extract_text)
+        override = overrides.get(entry)
+        if override:
+            applied.append(override)
+        if override and override.skip:
+            warnings.append(f"{entry}: skipped by override — {override.reason}")
+            emit(f"{entry} SKIPPED by override ({override.action or 'excluded'}): "
+                 f"{override.reason}")
+            counts["skipped_override"] += 1
+            tracker.advance()
+            continue
+
+        report = read_report(path, splitter=splitter, extract_text=extract_text,
+                             override=override)
         if not report["usable"]:
             reason = "; ".join(report["reasons"])
             warnings.append(f"{entry}: {reason}")
@@ -225,6 +264,15 @@ def run(config, *, embedder=None, splitter=None, extract_text=None, progress=Non
                                f"{report['total_sentences']} sentences")
 
     tracker.finish()
+
+    if applied:
+        con = sqlite3.connect(config.db_path)
+        try:
+            record_applied(con, applied)
+        finally:
+            con.close()
+        emit(f"recorded {len(applied)} applied overrides in report_overrides_applied")
+
     if counts["skipped_quality"]:
         emit(f"{counts['skipped_quality']} reports need re-OCR; try: "
              f"ocrmypdf --redo-ocr <entry>.pdf <entry>.pdf")

@@ -1,0 +1,56 @@
+{
+  "_about": "Per-report handling rules for stage 2. Curation, not derived data \u2014 kept here rather than in nugrade_data.db because stage 1 rebuilds that database wholesale and would erase them. Every entry needs a 'reason'; loading fails otherwise, since an override nobody can explain cannot be reviewed or retired.",
+  "_keys": {
+    "reason": "required \u2014 why this document needs special handling",
+    "skip": "exclude from embedding entirely",
+    "action": "what a human should do about it, e.g. 'ocr'",
+    "pages": "'12-30', '5' or '3,12-14' \u2014 extract only these 1-based pages",
+    "strip_references": "force reference truncation on or off",
+    "language": "non-English marker; SciBERT should not embed these",
+    "duplicate_of": "another EXFOR entry sharing this document",
+    "min_usable_sentences / max_rejection_rate / healthy_yield": "per-document quality gate thresholds"
+  },
+  "reports": {
+    "10104": {
+      "reason": "69-page image-only scan; no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "11180": {
+      "reason": "image-only scan; no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "12478": {
+      "reason": "image-only scan; no text layer",
+      "skip": true,
+      "action": "ocr"
+    },
+    "31567": {
+      "reason": "22 fragments extracted, none usable; scan quality too poor",
+      "skip": true,
+      "action": "ocr"
+    },
+    "12205": {
+      "reason": "only 11 usable sentences; likely a partial or cover-page scan",
+      "skip": true,
+      "action": "ocr"
+    },
+    "10374": {
+      "reason": "cites ANL-7710 p 12 (1971) \u2014 a 477-page annual report. Embedding all of it makes this entry's features describe the compilation rather than its own measurement, and gives it a vector identical to entry 10009, which cites a different chapter of the same document. Set 'pages' once the chapter boundaries are known.",
+      "duplicate_of": "10009"
+    },
+    "10009": {
+      "reason": "cites ANL-7710 vol 9 (1971) \u2014 same 477-page annual report as entry 10374, at a different chapter. See that entry.",
+      "duplicate_of": "10374"
+    },
+    "11446": {
+      "reason": "shares ORNL-2501 p 26 (1958) with entry 11293, cited at a different page",
+      "duplicate_of": "11293"
+    },
+    "11293": {
+      "reason": "shares ORNL-2501 p 18 (1958) with entry 11446, cited at a different page",
+      "duplicate_of": "11446"
+    }
+  }
+}

@@ -98,6 +98,25 @@ stubs.
 | `exfor_bib.py` / `resolve_doi.py` | bibliographic parsing, DOI resolution |
 | `stage1/2/3`, `run_pipeline.py` | orchestration: resume, ordering, persistence, schema |
 
+## Per-report handling
+
+A few documents need individual treatment — an image-only scan, a compiled report cited at
+one chapter, a non-English report. Those rules live in `data/report_overrides.json`:
+
+```json
+"10104": {"reason": "69-page image-only scan; no text layer", "skip": true, "action": "ocr"},
+"10374": {"reason": "cites one chapter of a 477-page annual report", "pages": "20-40"}
+```
+
+They are kept in a file rather than in the database because they are curation, not derived
+data: stage 1 rebuilds the database wholesale and would erase them. Every entry needs a
+`reason`, and loading fails on an unknown key — a silently ignored typo would mean the
+override never applies. Supported keys: `skip`, `action`, `pages`, `strip_references`,
+`language`, `duplicate_of`, and the three quality-gate thresholds.
+
+Whatever stage 2 applies is written to a `report_overrides_applied` table, so a surprising
+embedding can be traced back to the rule responsible.
+
 ## The database contract
 
 The NuGrade app enforces a schema contract at startup (`nugrade/db_contract.py` in that
