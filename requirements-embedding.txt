@@ -1,0 +1,20 @@
+# Stage 2 only — turning report PDFs into sentence embeddings.
+#
+#     pip install -r requirements.txt -r requirements-embedding.txt
+#     python -m spacy download en_core_web_sm
+#
+# Skip this file entirely if you are only running stage 1 or stage 3. Each package here is
+# imported lazily, so those stages and the whole test suite work without any of it.
+#
+# torch is the large one. On a cluster it is usually better to take it from the module
+# system or a conda channel than to let pip fetch a CUDA build:
+#     conda install -c conda-forge pytorch transformers
+#
+# If pip does the work, a CPU-only build is much smaller and is all this pipeline needs —
+# SciBERT inference over a few hundred documents is not GPU-bound:
+#     pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+pymupdf>=1.23          # PDF text extraction
+spacy>=3.7             # sentence segmentation; also needs the en_core_web_sm model
+torch>=2.0             # SciBERT backend
+transformers>=4.30     # SciBERT

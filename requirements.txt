@@ -1,32 +1,18 @@
-# Python dependencies for the preprocessing pipeline.
+# Core dependencies — stages 1 and 3, run_pipeline, and every validation script.
 #
 #     pip install -r requirements.txt
-#     python -m spacy download en_core_web_sm      # stage 2 only; not a pip package
 #
-# Versions are the ones this pipeline is known to run on, floored rather than pinned so a
-# cluster module system can satisfy them. Stage 1 additionally needs OpenMC, which is not
-# installable this way — see below.
+# Deliberately tiny. The usual cluster job is stage 1, which needs nothing else from pip;
+# putting the embedding stack in here made `pip install -r requirements.txt` resolve torch,
+# transformers and spaCy together, which is a multi-gigabyte download and long enough on a
+# slow link to look like a hang.
+#
+# For stage 2 (report embedding) also install:
+#     pip install -r requirements-embedding.txt
+#
+# OpenMC is needed only by stage 1, to read ACE evaluation files, and is not a pip package:
+#     conda install -c conda-forge openmc
+# It is imported lazily, so everything except the cross-section reads works without it.
 
-# --- always needed ---
 numpy>=1.24
 pandas>=2.0
-
-# --- stage 2 only (report embedding) ---
-# Each is imported lazily, so stages 1 and 3 and the whole test suite run without them.
-pymupdf>=1.23          # PDF text extraction
-spacy>=3.7             # sentence segmentation; also needs en_core_web_sm, see above
-torch>=2.0             # SciBERT backend
-transformers>=4.30     # SciBERT
-
-# --- development ---
-pytest>=7.0
-
-# --- not installable here ---
-# OpenMC is required by stage 1 to read ACE evaluation files and is normally provided by
-# the cluster's module system or a conda channel:
-#     conda install -c conda-forge openmc
-# It is imported lazily, so everything except stage 1's cross-section reads works without it.
-#
-# ocrmypdf is only needed to run ocr_reports.py over scanned PDFs, and is a system package:
-#     brew install ocrmypdf        (macOS)
-#     apt install ocrmypdf         (Debian/Ubuntu)

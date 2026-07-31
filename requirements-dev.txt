@@ -1,0 +1,9 @@
+# Development only — running the test suite.
+#
+#     pip install -r requirements.txt -r requirements-dev.txt
+#     pytest
+#
+# The suite runs without the embedding stack: heavy dependencies sit behind injectable
+# interfaces that tests replace with stubs.
+
+pytest>=7.0

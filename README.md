@@ -71,10 +71,20 @@ order given.
 ## Pre-requisites
 
 ```bash
-pip install -r requirements.txt
-python -m spacy download en_core_web_sm     # stage 2 only
+pip install -r requirements.txt              # numpy + pandas; that is all stages 1 and 3 need
 conda install -c conda-forge openmc          # stage 1 only; not a pip package
+
+# stage 2 only — skip unless you are embedding reports
+pip install -r requirements-embedding.txt
+python -m spacy download en_core_web_sm
 ```
+
+The split matters on a cluster: `requirements-embedding.txt` pulls torch, transformers and
+spaCy, which is a multi-gigabyte resolve and long enough on a slow link to look like a hang.
+Stage 1 needs none of it. If pip must fetch torch, the CPU-only build is far smaller and is
+all this pipeline uses — SciBERT over a few hundred documents is not GPU-bound:
+
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 Data, which is not in the repository:
 

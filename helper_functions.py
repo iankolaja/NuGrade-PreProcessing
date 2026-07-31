@@ -9,7 +9,6 @@ import pandas as pd
 import sqlite3
 import numpy as np
 import os
-import matplotlib.pyplot as plt
 
 def get_A(target_symbol):
     """Return the mass number from an EXFOR target string such as 'Li-7', or -1."""
@@ -44,6 +43,8 @@ def extract_XS_openMC_hdf5(path, MT, interp_energies, temp='294K', do_plot=True)
     grid_cross_section = xs_func(grid_energy)
     interp_cross_section = xs_func(interp_energies)
     if do_plot:
+        import matplotlib.pyplot as plt   # optional; only needed for the diagnostic plot
+
         plt.loglog(grid_energy, grid_cross_section, label="ENDF")
         plt.loglog(interp_energies, interp_cross_section, ".", label="Interpolated")
         plt.xlabel('Energy (eV)')
@@ -74,6 +75,8 @@ def extract_XS_openMC_ace(path, MT, interp_energies, temp='294K', do_plot=False)
     grid_cross_section = xs_func(grid_energy)
     interp_cross_section = xs_func(interp_energies)
     if do_plot:
+        import matplotlib.pyplot as plt   # optional; only needed for the diagnostic plot
+
         plt.loglog(grid_energy, grid_cross_section, label="ENDF")
         plt.loglog(interp_energies, interp_cross_section, ".", label="Interpolated")
         plt.xlabel('Energy (eV)')
