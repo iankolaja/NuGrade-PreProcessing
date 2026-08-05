@@ -247,3 +247,58 @@ class TestContractCheck:
         monkeypatch.setattr(run_pipeline, "preflight", lambda c, s: [])
 
         assert run_pipeline.main() == 0
+
+
+class TestHeader:
+    """The header answers the two questions asked of a stalled cluster job: did it pick up
+    the right inputs, and where is it running."""
+
+    def test_reports_host_and_process(self, tmp_path, capsys):
+        run_pipeline.print_header(Config.resolved(output_dir=tmp_path), ["3"])
+
+        out = capsys.readouterr().out
+        assert "host" in out
+        assert "pid" in out
+
+    def test_flags_a_missing_input_rather_than_omitting_it(self, tmp_path, capsys):
+        """A path that silently does not appear is the failure this exists to prevent."""
+        config = Config.resolved(output_dir=tmp_path, x4_db=tmp_path / "absent.db")
+
+        run_pipeline.print_header(config, ["1"])
+
+        assert "MISSING" in capsys.readouterr().out
+
+    def test_shows_a_present_file_with_its_size(self, tmp_path, capsys):
+        db = tmp_path / "nugrade_data.db"
+        db.write_bytes(b"x" * 2_000_000)
+
+        run_pipeline.print_header(Config.resolved(output_dir=tmp_path), ["3"])
+
+        assert "MB" in capsys.readouterr().out
+
+    def test_counts_the_pdfs_for_a_stage_two_run(self, tmp_path, capsys):
+        pdfs = tmp_path / "pdfs"
+        pdfs.mkdir()
+        for i in range(3):
+            (pdfs / f"{i}.pdf").touch()
+        config = Config.resolved(output_dir=tmp_path, pdf_dir=pdfs)
+
+        run_pipeline.print_header(config, ["2"])
+
+        assert "(3 files)" in capsys.readouterr().out
+
+    def test_does_not_print_an_empty_inputs_section(self, tmp_path, capsys):
+        """Stage 3 reads only the database; a bare 'inputs:' heading reads as a failure."""
+        run_pipeline.print_header(Config.resolved(output_dir=tmp_path), ["3"])
+
+        out = capsys.readouterr().out
+        assert "inputs     (none beyond the database below)" in out
+
+    def test_reports_slurm_job_when_present(self, tmp_path, capsys, monkeypatch):
+        monkeypatch.setenv("SLURM_JOB_ID", "12345")
+        monkeypatch.setenv("SLURM_JOB_NODELIST", "node042")
+
+        run_pipeline.print_header(Config.resolved(output_dir=tmp_path), ["3"])
+
+        out = capsys.readouterr().out
+        assert "12345" in out and "node042" in out

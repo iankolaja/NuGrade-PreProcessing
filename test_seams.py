@@ -19,6 +19,7 @@ from stage_result import (
     StageResult,
     format_duration,
     printer,
+    step,
 )
 
 
@@ -90,10 +91,20 @@ class TestPrinter:
         assert "hello" in stream.getvalue()
 
     def test_line_carries_stage_and_elapsed(self):
+        """Format is [HH:MM:SS stage +elapsed]; the wall clock answers "when did it stop",
+        which elapsed time alone cannot."""
         stream = io.StringIO()
         printer("2", stream=stream)("working")
 
-        assert stream.getvalue().startswith("[2 0:00]")
+        line = stream.getvalue()
+        assert " 2 +0:00]" in line
+        assert "working" in line
+
+    def test_wall_clock_can_be_suppressed(self):
+        stream = io.StringIO()
+        printer("2", stream=stream, clock=False)("working")
+
+        assert stream.getvalue().startswith("[2 +0:00]")
 
 
 class TestProgressTracker:
@@ -231,3 +242,74 @@ class TestNoClusterImports:
 
         assert result.returncode == 0, result.stderr
         assert "ok" in result.stdout
+
+
+class TestTimeBasedProgress:
+    """A count-only cadence goes silent for as long as the work takes, so a merely slow job
+    becomes indistinguishable from a hung one."""
+
+    def test_emits_when_the_interval_elapses_before_the_count(self):
+        messages = []
+        tracker = ProgressTracker(1000, messages.append, every=500, min_interval=0.0)
+
+        tracker.advance()
+
+        assert len(messages) == 1, "a long-quiet log must report before the count is due"
+
+    def test_stays_quiet_when_neither_trigger_is_due(self):
+        messages = []
+        tracker = ProgressTracker(1000, messages.append, every=500, min_interval=3600)
+
+        for _ in range(10):
+            tracker.advance()
+
+        assert messages == []
+
+    def test_heartbeat_reports_only_after_the_interval(self):
+        messages = []
+        tracker = ProgressTracker(10, messages.append, every=1000, min_interval=3600)
+
+        tracker.heartbeat()
+
+        assert messages == []
+
+    def test_heartbeat_reports_when_the_log_has_gone_quiet(self):
+        messages = []
+        tracker = ProgressTracker(10, messages.append, every=1000, min_interval=0.0)
+
+        tracker.heartbeat("still working")
+
+        assert len(messages) == 1
+        assert "still working" in messages[0]
+
+
+class TestStep:
+    def test_announces_before_and_after(self):
+        messages = []
+
+        with step(messages.append, "reading X4Pro"):
+            pass
+
+        assert messages[0].endswith("...")
+        assert "done" in messages[1]
+
+    def test_reports_a_failure_with_its_duration(self):
+        """A stage that dies mid-operation should say which one."""
+        messages = []
+
+        with pytest.raises(ValueError):
+            with step(messages.append, "reading X4Pro"):
+                raise ValueError("disk gone")
+
+        assert "FAILED" in messages[1]
+        assert "disk gone" in messages[1]
+
+
+class TestPrinterClock:
+    def test_line_carries_wall_clock_and_elapsed(self):
+        stream = io.StringIO()
+        printer("1", stream=stream)("hello")
+
+        line = stream.getvalue()
+        assert ":" in line.split("]")[0]      # HH:MM:SS
+        assert "+0:00" in line

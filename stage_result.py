@@ -9,6 +9,7 @@ here is flushed.
 """
 import sys
 import time
+from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -82,20 +83,56 @@ def format_duration(seconds):
     return f"{hours}:{minutes:02d}:{secs:02d}" if hours else f"{minutes}:{secs:02d}"
 
 
-def printer(stage, stream=None):
+def printer(stage, stream=None, clock=True):
     """Return a progress callback that timestamps and flushes every line.
 
     Flushing is not optional: SLURM block-buffers redirected stdout, so an unflushed stage
     produces no output at all until it finishes or dies.
+
+    Lines carry wall-clock time as well as elapsed, because the first question asked of a
+    stalled cluster job is *when* it stopped, which elapsed time alone cannot answer.
     """
     stream = stream or sys.stdout
     start = time.monotonic()
 
     def emit(message):
-        print(f"[{stage} {format_duration(time.monotonic() - start)}] {message}",
+        stamp = datetime.now().strftime("%H:%M:%S ") if clock else ""
+        print(f"[{stamp}{stage} +{format_duration(time.monotonic() - start)}] {message}",
               file=stream, flush=True)
 
     return emit
+
+
+def step(emit, description):
+    """Announce a long operation before it starts, and report how long it took.
+
+    Used around the handful of calls that can run for minutes with nothing to report —
+    reading 2.6 M rows out of X4Pro, grouping them — where printing only on completion
+    leaves a cluster log silent with no indication of whether anything is happening.
+
+        with step(emit, "reading X4Pro"):
+            frame = pd.read_sql_query(...)
+    """
+    return _Step(emit, description)
+
+
+class _Step:
+    def __init__(self, emit, description):
+        self.emit = emit
+        self.description = description
+
+    def __enter__(self):
+        self.emit(f"{self.description} ...")
+        self.start = time.monotonic()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        elapsed = format_duration(time.monotonic() - self.start)
+        if exc_type is None:
+            self.emit(f"{self.description} done ({elapsed})")
+        else:
+            self.emit(f"{self.description} FAILED after {elapsed}: {exc}")
+        return False
 
 
 def null_printer(_message):
@@ -105,22 +142,24 @@ def null_printer(_message):
 class ProgressTracker:
     """Periodic progress with a rate and an ETA.
 
-    Stage 1 runs for hours, so a bare counter is not enough to tell a slow run from a stuck
-    one — the rate is what makes that visible.
+    Emits on whichever comes first: ``every`` items, or ``min_interval`` seconds since the
+    last line. The time trigger is what makes a cluster log readable — a purely count-based
+    cadence goes silent for as long as the work takes, and a job that is merely slow becomes
+    indistinguishable from one that has hung. The count trigger stops a fast stage from
+    producing a line per item.
     """
 
-    def __init__(self, total, emit, *, every=100, unit="items"):
+    def __init__(self, total, emit, *, every=100, unit="items", min_interval=60.0):
         self.total = total
         self.emit = emit
         self.every = max(1, every)
         self.unit = unit
+        self.min_interval = min_interval
         self.done = 0
         self.start = time.monotonic()
+        self.last_emit = self.start
 
-    def advance(self, n=1, suffix=""):
-        self.done += n
-        if self.done % self.every and self.done != self.total:
-            return
+    def _line(self, suffix=""):
         elapsed = time.monotonic() - self.start
         rate = self.done / elapsed if elapsed > 0 else 0.0
         share = f" ({100 * self.done / self.total:.1f}%)" if self.total else ""
@@ -129,7 +168,24 @@ class ProgressTracker:
             eta = f" eta {format_duration((self.total - self.done) / rate)}"
         tail = f" {suffix}" if suffix else ""
         self.emit(f"{self.done}/{self.total or '?'} {self.unit}{share} "
-                  f"{rate:.1f}/s{eta}{tail}")
+                  f"{rate:.2f}/s{eta}{tail}")
+        self.last_emit = time.monotonic()
+
+    def advance(self, n=1, suffix=""):
+        self.done += n
+        due_by_count = self.done % self.every == 0
+        due_by_time = (time.monotonic() - self.last_emit) >= self.min_interval
+        if due_by_count or due_by_time or self.done == self.total:
+            self._line(suffix)
+
+    def heartbeat(self, note=""):
+        """Emit only if the log has been quiet for ``min_interval``.
+
+        For loops whose individual items are long: called each iteration, it says
+        "still working" without one line per item.
+        """
+        if (time.monotonic() - self.last_emit) >= self.min_interval:
+            self._line(note)
 
     def finish(self, suffix=""):
         elapsed = time.monotonic() - self.start

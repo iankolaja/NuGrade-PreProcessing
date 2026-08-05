@@ -19,6 +19,7 @@ import argparse
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
 import stage1_ingestion
@@ -125,6 +126,71 @@ def run_pipeline(config, stage_names, *, keep_going=False, progress_factory=prin
     return results, skipped
 
 
+def print_header(config, stage_names):
+    """Echo where this is running and every path it resolved, before doing any work.
+
+    On a cluster the first question about a long job is whether it picked up the right
+    inputs at all, and the second is which node it landed on. Both are cheap to answer here
+    and impossible to reconstruct afterwards from a log that only says "starting".
+    """
+    import getpass
+    import os
+    import platform
+    from datetime import datetime
+
+    print("=" * 66)
+    print("NuGrade preprocessing pipeline")
+    print("=" * 66)
+    print(f"  started    {datetime.now().isoformat(timespec='seconds')}")
+    print(f"  host       {platform.node()}  (pid {os.getpid()}, user {getpass.getuser()})")
+    job = os.environ.get("SLURM_JOB_ID")
+    if job:
+        print(f"  slurm job  {job}"
+              + (f" on {os.environ['SLURM_JOB_NODELIST']}"
+                 if os.environ.get("SLURM_JOB_NODELIST") else ""))
+    print(f"  python     {platform.python_version()}  ({sys.executable})")
+    print(f"  stages     {', '.join(stage_names)}")
+
+    from pipeline_config import template_root
+
+    inputs = []
+    if {"1", "1b"} & set(stage_names):
+        inputs.append(("x4pro", _exists(config.x4_db)))
+        for name, template in config.eval_templates():
+            inputs.append((name, _exists(template_root(template))))
+    if "2" in stage_names:
+        pdf_dir = Path(config.pdf_dir)
+        count = len(list(pdf_dir.glob("*.pdf"))) if pdf_dir.is_dir() else 0
+        inputs.append(("pdfs", f"{_exists(pdf_dir)}  ({count} files)"))
+        inputs.append(("templates", _exists(config.template_file)))
+    if inputs:
+        print("  inputs:")
+        for label, rendered in inputs:
+            print(f"    {label:10s} {rendered}")
+    else:
+        # Stages 1b and 3 read only the database, which is listed under outputs. An empty
+        # "inputs:" heading reads like something failed to resolve.
+        print("  inputs     (none beyond the database below)")
+
+    print("  outputs:")
+    print(f"    directory  {config.output_dir}")
+    print(f"    database   {_exists(config.db_path)}")
+    print(f"  settings   k_neighbors={config.k_neighbors}  resume={config.resume}  "
+          f"log_every={config.log_every}"
+          + (f"  limit={config.limit}" if config.limit else ""))
+    print()
+
+
+def _exists(path):
+    """Render a path with whether it is actually there — the common cluster mistake."""
+    p = Path(path)
+    if p.is_dir():
+        return f"{p}  [dir ok]"
+    if p.is_file():
+        return f"{p}  [{p.stat().st_size / 1e6:.0f} MB]"
+    return f"{p}  [MISSING]"
+
+
 def render_summary(results, skipped, elapsed):
     lines = ["", "=" * 66, "PIPELINE SUMMARY", "=" * 66]
     for name in STAGE_ORDER:
@@ -165,8 +231,7 @@ def main():
         print(error, file=sys.stderr)
         return 2
 
-    print(f"database:  {config.db_path}")
-    print(f"stages:    {', '.join(stage_names)}")
+    print_header(config, stage_names)
 
     problems = preflight(config, stage_names)
     if problems:

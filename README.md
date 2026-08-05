@@ -49,6 +49,21 @@ variable.
 `--dry-run` validates every path before any work starts, and names the flag or variable to
 set for each problem. Worth doing before spending a cluster allocation.
 
+### Reading the log
+
+Every run opens with a header giving the host, PID, SLURM job id, and each resolved path
+marked `[dir ok]`, `[N MB]` or `[MISSING]` — so a job that picked up the wrong inputs is
+obvious from the first ten lines rather than from a failure an hour later.
+
+Progress lines carry wall-clock time as well as elapsed (`[14:32:07 1 +1:04:12]`), because
+the first question about a stalled job is *when* it stopped. Long single operations announce
+themselves before starting and report their duration on completion, so a fifteen-minute
+table read is visible as work rather than as silence.
+
+Progress emits on whichever comes first: `--log-every` items, or sixty seconds. The time
+trigger is what keeps a slow stage distinguishable from a hung one; without it a
+count-based cadence goes quiet for exactly as long as the work takes.
+
 ### Resuming
 
 Stage 1 runs for hours and is resumable per reaction channel: each channel's rows and its

@@ -32,7 +32,7 @@ from imputation import (
     weighted_mean_relative_uncertainty,
 )
 from pipeline_config import Config, add_config_arguments, check_or_raise, ConfigError
-from stage_result import ProgressTracker, StageResult, null_printer, printer
+from stage_result import ProgressTracker, StageResult, null_printer, printer, step
 
 # pandas writes these when a frame is saved with its index; the notebook did exactly that,
 # so re-running against its own output accumulated a new one each time.
@@ -59,6 +59,7 @@ def load_inputs(db_path):
     try:
         entries = pd.read_sql("SELECT * FROM entries", con)
         reports = pd.read_sql("SELECT * FROM report_embeddings", con)
+        # 2.6 M rows; the slowest silent step in this stage.
         measurements = pd.read_sql("SELECT * FROM measurements", con)
     finally:
         con.close()
@@ -104,14 +105,15 @@ def impute(measurements, reports, candidates, impute_index, config, emit):
     which is only safe while the frame's index has no gaps — true today only because the
     Energy > 0 filter happens to drop nothing.
     """
-    grouped = {key: group for key, group in measurements.groupby(["EXFOR_Entry", "MT"])}
+    with step(emit, "grouping measurements by entry and channel"):
+        grouped = {key: group for key, group in measurements.groupby(["EXFOR_Entry", "MT"])}
     reports_by_entry = reports.set_index("EXFOR_Entry")
     candidate_entries = list(candidates["EXFOR_Entry"])
     weights = config.feature_weights or default_feature_weights()
 
     counts = {"nlp_imputed": 0, "quantile_imputed": 0}
-    tracker = ProgressTracker(len(impute_index), emit,
-                              every=config.log_every, unit="measurements")
+    tracker = ProgressTracker(len(impute_index), emit, every=config.log_every,
+                              unit="measurements", min_interval=60.0)
 
     for label in impute_index:
         query = measurements.loc[label]
@@ -203,11 +205,14 @@ def run(config, *, progress=None, write_test_db=True):
     started = time.monotonic()
     check_or_raise(config, "3")
 
-    measurements, reports, entries = load_inputs(config.db_path)
+    with step(emit, f"loading tables from {config.db_path}"):
+        measurements, reports, entries = load_inputs(config.db_path)
     emit(f"loaded {len(measurements):,} measurements, {len(reports)} embedded reports")
 
-    measurements = prepare(measurements)
-    candidates, targets, impute_index = select_pools(measurements, reports, entries)
+    with step(emit, "standardising KNN features"):
+        measurements = prepare(measurements)
+    with step(emit, "selecting candidate and target pools"):
+        candidates, targets, impute_index = select_pools(measurements, reports, entries)
     if config.limit:
         impute_index = impute_index[:config.limit]
 
@@ -226,7 +231,8 @@ def run(config, *, progress=None, write_test_db=True):
     measurements.loc[remaining, "uncertainty_source"] = "quantile_imputed"
     counts["quantile_imputed"] += int(remaining.sum())
 
-    written = persist(measurements, config.db_path, emit)
+    with step(emit, "writing measurements back"):
+        written = persist(measurements, config.db_path, emit)
     outputs = [Path(config.db_path)]
     if write_test_db:
         if write_test_subset(written, config.test_db_path, emit):

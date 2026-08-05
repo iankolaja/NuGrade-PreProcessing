@@ -31,7 +31,7 @@ from evaluations import readers_from_config
 from helper_functions import get_A, get_element, get_z
 from ingestion import compute_channel_metrics, relative_uncertainties
 from pipeline_config import Config, ConfigError, add_config_arguments, check_or_raise
-from stage_result import ProgressTracker, StageResult, null_printer, printer
+from stage_result import ProgressTracker, StageResult, null_printer, printer, step
 
 X4_QUERY = """
     SELECT Reaction, Projectile, En, dEn, Sig, dSig, MT, DatasetID, Entry, Subent,
@@ -71,16 +71,18 @@ SUMMARY_COLUMNS = ["Z", "A", "Symbol", "Projectile", "MT", "Reaction",
 def load_exfor_frame(x4_db, emit):
     """Read X4Pro and derive the columns the rest of the pipeline expects."""
     con = sqlite3.connect(f"file:{x4_db}?mode=ro", uri=True)
-    try:
-        frame = pd.read_sql_query(X4_QUERY, con, dtype=X4_DTYPES)
-    finally:
-        con.close()
-    emit(f"read {len(frame):,} rows from {x4_db}")
+    with step(emit, f"reading {x4_db}"):
+        try:
+            frame = pd.read_sql_query(X4_QUERY, con, dtype=X4_DTYPES)
+        finally:
+            con.close()
+    emit(f"read {len(frame):,} rows")
 
-    frame["A"] = frame["Target"].map(get_A)
-    frame["Element"] = frame["Target"].map(get_element)
-    frame["Z"] = frame["Element"].map(get_z)
-    frame["Author"] = frame["Author1Ini"] + frame["Author1"]
+    with step(emit, "deriving Z, A, element and author columns"):
+        frame["A"] = frame["Target"].map(get_A)
+        frame["Element"] = frame["Target"].map(get_element)
+        frame["Z"] = frame["Element"].map(get_z)
+        frame["Author"] = frame["Author1Ini"] + frame["Author1"]
     return frame.rename(columns=X4_RENAMES)
 
 
@@ -164,11 +166,13 @@ def run_measurements(config, *, readers=None, exfor_df=None, progress=None):
     readers = readers if readers is not None else readers_from_config(config)
     frame = exfor_df if exfor_df is not None else load_exfor_frame(config.x4_db, emit)
 
-    fallback = corpus_fallback_uncertainty(frame)
+    with step(emit, "computing the corpus fallback uncertainty"):
+        fallback = corpus_fallback_uncertainty(frame)
     emit(f"corpus fallback relative uncertainty: {fallback:.1%}")
 
-    nuclides = frame.drop_duplicates(subset=["Z", "A"])[["Z", "A", "Element"]]
-    nuclides = nuclides[(nuclides["Z"] >= 1) & (nuclides["A"] >= 1)]
+    with step(emit, "building the nuclide/channel work list"):
+        nuclides = frame.drop_duplicates(subset=["Z", "A"])[["Z", "A", "Element"]]
+        nuclides = nuclides[(nuclides["Z"] >= 1) & (nuclides["A"] >= 1)]
 
     con = sqlite3.connect(config.db_path)
     con.execute(PROGRESS_SCHEMA)
@@ -190,7 +194,12 @@ def run_measurements(config, *, readers=None, exfor_df=None, progress=None):
 
     warnings = []
     counts = {"channels": 0, "measurements": 0, "skipped_existing": 0, "no_data": 0}
-    tracker = ProgressTracker(len(work), emit, every=config.log_every, unit="channels")
+    emit(f"{len(work):,} nuclide/channel combinations to consider "
+         f"({len(nuclides):,} nuclides x {len(config.reaction_channels)} channels)")
+    # A line at least once a minute even if the count cadence has not been reached: these
+    # channels involve ACE reads and can be slow enough to look like a stall.
+    tracker = ProgressTracker(len(work), emit, every=config.log_every, unit="channels",
+                              min_interval=60.0)
 
     try:
         for Z, A, symbol, reaction, mt in work:
@@ -291,15 +300,18 @@ def run_aggregates(config, *, progress=None):
 
     con = sqlite3.connect(config.db_path)
     try:
-        measurements = pd.read_sql("SELECT * FROM measurements", con)
+        with step(emit, f"reading measurements from {config.db_path}"):
+            measurements = pd.read_sql("SELECT * FROM measurements", con)
         emit(f"read {len(measurements):,} measurements")
 
-        subentries = summarise_subentries(measurements)
-        subentries.to_sql("subentries", con, if_exists="replace", index=False)
+        with step(emit, "summarising subentries"):
+            subentries = summarise_subentries(measurements)
+            subentries.to_sql("subentries", con, if_exists="replace", index=False)
         emit(f"wrote {len(subentries):,} subentries")
 
-        entries = summarise_entries(measurements)
-        entries.to_sql("entries", con, if_exists="replace", index=False)
+        with step(emit, "summarising entries"):
+            entries = summarise_entries(measurements)
+            entries.to_sql("entries", con, if_exists="replace", index=False)
         emit(f"wrote {len(entries):,} entries")
         con.commit()
     finally:
