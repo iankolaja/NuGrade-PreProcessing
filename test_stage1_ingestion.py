@@ -299,3 +299,57 @@ class TestFallbackUncertainty:
 class TestChannelLabel:
     def test_is_stable_and_readable(self):
         assert stage1_ingestion.channel_label("n", 3, 7, "N,TOT") == "n_3_7_N,TOT"
+
+
+class TestDuplicationGuard:
+    """Resume trusts ingest_progress to describe what is already in measurements. If that
+    table was written by something else, appending doubles the corpus — which is exactly
+    what happened on the cluster: 2,611,611 rows became 5,223,226."""
+
+    def _unmanaged_measurements(self, config):
+        """A measurements table with no ingest_progress rows, as the notebook left it."""
+        con = sqlite3.connect(config.db_path)
+        make_exfor_frame().to_sql("measurements", con, index=False)
+        con.commit()
+        con.close()
+
+    def test_refuses_to_append_to_an_unmanaged_table(self, stage1_config):
+        self._unmanaged_measurements(stage1_config)
+
+        with pytest.raises(ConfigError, match="no ingest_progress"):
+            run_measurements(stage1_config)
+
+    def test_the_message_names_both_ways_out(self, stage1_config):
+        self._unmanaged_measurements(stage1_config)
+
+        with pytest.raises(ConfigError) as excinfo:
+            run_measurements(stage1_config)
+
+        message = str(excinfo.value)
+        assert "--no-resume" in message
+        assert "DROP TABLE" in message
+
+    def test_no_resume_rebuilds_without_complaint(self, stage1_config):
+        """The documented way out must actually work."""
+        self._unmanaged_measurements(stage1_config)
+        fresh = Config.resolved(output_dir=stage1_config.output_dir,
+                                x4_db=stage1_config.x4_db, allow_missing_evals=True,
+                                resume=False)
+
+        result = run_measurements(fresh)
+
+        assert result.counts["channels"] == 3
+        assert len(read_table(fresh.db_path, "measurements")) == 9
+
+    def test_a_normal_resume_is_unaffected(self, stage1_config):
+        """The guard must not fire on a database this pipeline built itself."""
+        run_measurements(stage1_config)
+
+        second = run_measurements(stage1_config)
+
+        assert second.counts["skipped_existing"] == 3
+
+    def test_an_empty_database_is_not_treated_as_unmanaged(self, stage1_config):
+        result = run_measurements(stage1_config)
+
+        assert result.counts["channels"] == 3

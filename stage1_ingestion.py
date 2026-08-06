@@ -115,6 +115,15 @@ def completed_labels(db_path):
         con.close()
 
 
+def _measurement_count(con):
+    """Rows currently in measurements, or 0 if the table does not exist."""
+    tables = {r[0] for r in con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'")}
+    if "measurements" not in tables:
+        return 0
+    return con.execute("SELECT COUNT(*) FROM measurements").fetchone()[0]
+
+
 def write_channel(con, label, channel_data, summary):
     """Persist one channel's rows and its progress marker in a single transaction.
 
@@ -183,8 +192,25 @@ def run_measurements(config, *, readers=None, exfor_df=None, progress=None):
         con.execute("DROP TABLE IF EXISTS measurements")
         con.execute("DELETE FROM ingest_progress")
         con.commit()
-    elif done:
-        emit(f"resuming: {len(done)} channels already ingested")
+    else:
+        # Resume trusts ingest_progress to describe what is already in measurements. That
+        # holds only if every row was written by write_channel. A measurements table with
+        # no matching progress rows was built by something else — the notebook, or a run
+        # from before this table existed — and appending to it silently doubles the corpus.
+        existing = _measurement_count(con)
+        if existing and not done:
+            con.close()
+            raise ConfigError(
+                f"{config.db_path} already holds {existing:,} measurements but has no "
+                f"ingest_progress rows describing them.\n"
+                f"    Resuming would append a second copy of every channel. This database "
+                f"was built by an older pipeline.\n"
+                f"    Either rebuild it:      --no-resume\n"
+                f"    or drop the stale table: "
+                f"sqlite3 {config.db_path} 'DROP TABLE measurements;'")
+        if done:
+            emit(f"resuming: {len(done)} channels already ingested "
+                 f"({existing:,} measurements present)")
 
     work = [(row.Z, row.A, row.Element, reaction, mt)
             for row in nuclides.itertuples()
