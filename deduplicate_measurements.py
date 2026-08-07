@@ -38,20 +38,82 @@ def count_distinct(con, columns, table="measurements"):
         f"SELECT COUNT(*) FROM (SELECT DISTINCT {quoted} FROM {table})").fetchone()[0]
 
 
-def deduplicate(con, table="measurements", emit=print):
-    """Delete rows identical across every column, keeping the lowest rowid of each group."""
-    columns = [c for c in table_columns(con, table) if c != "rowid"]
-    quoted = ", ".join(f'"{c}"' for c in columns)
+# What identifies one physical measurement, independent of anything the pipeline computes
+# from it. Two rows agreeing on all of these are the same measurement ingested twice.
+#
+# Dataset_Number and dEnergy are in the key because EXFOR distinguishes on them: the corpus
+# holds 11 groups that agree on subentry, energy, cross section and uncertainty but belong
+# to different datasets, or carry a different energy uncertainty. Leaving them out collapsed
+# 13 genuine measurements — small, but silent data loss is exactly what this tool must not
+# do.
+NATURAL_KEY = ["EXFOR_Subentry", "Dataset_Number", "Energy", "dEnergy",
+               "Data", "dData", "MT", "Projectile"]
 
+# Columns produced by the evaluation comparison. A re-ingest that could not find its ACE
+# files writes these as NULL, so they measure how complete a row is.
+EVALUATION_COLUMNS = ["endf8", "endf7-1"]
+
+
+def deduplicate(con, table="measurements", emit=print, natural=True):
+    """Remove rows ingested more than once, keeping the most complete copy of each.
+
+    Exact-match deduplication is not enough on its own. A second ingest run computes the
+    derived columns again, and if it used different code or could not reach the evaluation
+    files, its rows differ from the first copy in exactly those columns — so every row looks
+    distinct while the corpus is plainly doubled. That is what happened on the cluster: a
+    re-run with no ACE paths appended 2,611,193 rows whose endf8 and endf7-1 are all NULL.
+
+    Rows are therefore grouped by the raw EXFOR identity in NATURAL_KEY, and the survivor of
+    each group is the one with evaluation data — falling back to the lowest rowid when the
+    copies are equally complete. Pass ``natural=False`` for the stricter identical-in-every-
+    column rule.
+    """
+    columns = [c for c in table_columns(con, table) if c != "rowid"]
     before = count_rows(con, table)
     emit(f"  {before:,} rows, {len(columns)} columns")
 
+    if not natural:
+        group = ", ".join(f'"{c}"' for c in columns)
+        order = "MIN(rowid)"
+    else:
+        present = [c for c in NATURAL_KEY if c in columns]
+        if len(present) < 3:
+            raise ValueError(
+                f"cannot identify measurements: {table} lacks {set(NATURAL_KEY) - set(columns)}")
+        group = ", ".join(f'"{c}"' for c in present)
+        # Prefer a row that carries evaluation data; break ties by rowid so the choice is
+        # deterministic rather than whatever sqlite happens to return.
+        completeness = " + ".join(
+            f'(CASE WHEN "{c}" IS NOT NULL THEN 1 ELSE 0 END)'
+            for c in EVALUATION_COLUMNS if c in columns) or "0"
+        order = f"(SELECT rowid FROM {table} t2 WHERE " + " AND ".join(
+            f't2."{c}" IS {table}."{c}" ' for c in present) + \
+            f"ORDER BY ({completeness}) DESC, rowid ASC LIMIT 1)"
+        emit(f"  grouping on {', '.join(present)}; keeping the copy with evaluation data")
+
     started = time.monotonic()
-    con.execute(f"""
-        DELETE FROM {table}
-        WHERE rowid NOT IN (SELECT MIN(rowid) FROM {table} GROUP BY {quoted})
-    """)
+    if natural:
+        # Materialise the keepers first: a correlated subquery per row is far too slow on
+        # a table of this size.
+        con.execute("DROP TABLE IF EXISTS _dedup_keep")
+        con.execute(f"""
+            CREATE TEMP TABLE _dedup_keep AS
+            SELECT rowid AS keep FROM (
+                SELECT rowid, ROW_NUMBER() OVER (
+                    PARTITION BY {group}
+                    ORDER BY ({completeness}) DESC, rowid ASC) AS rank
+                FROM {table}
+            ) WHERE rank = 1
+        """)
+        con.execute(f"DELETE FROM {table} WHERE rowid NOT IN (SELECT keep FROM _dedup_keep)")
+        con.execute("DROP TABLE IF EXISTS _dedup_keep")
+    else:
+        con.execute(f"""
+            DELETE FROM {table}
+            WHERE rowid NOT IN (SELECT MIN(rowid) FROM {table} GROUP BY {group})
+        """)
     con.commit()
+
     after = count_rows(con, table)
     emit(f"  removed {before - after:,} duplicate rows in "
          f"{time.monotonic() - started:.0f}s; {after:,} remain")
@@ -88,6 +150,9 @@ def main():
                         help="report how many rows are duplicated, change nothing")
     parser.add_argument("--keep-progress", action="store_true",
                         help="do not clear ingest_progress after deduplicating")
+    parser.add_argument("--exact", action="store_true",
+                        help="only remove rows identical in every column, rather than "
+                             "grouping on the raw EXFOR identity")
     args = parser.parse_args()
 
     source = Path(args.database)
@@ -99,16 +164,27 @@ def main():
         con = sqlite3.connect(f"file:{source}?mode=ro", uri=True)
         try:
             columns = [c for c in table_columns(con, "measurements") if c != "rowid"]
+            present = [c for c in NATURAL_KEY if c in columns]
             total = count_rows(con)
-            distinct = count_distinct(con, columns)
+            identical = count_distinct(con, columns)
+            physical = count_distinct(con, present)
+            incomplete = con.execute(
+                'SELECT COUNT(*) FROM measurements WHERE "endf8" IS NULL').fetchone()[0]
         finally:
             con.close()
         print(f"{source}")
-        print(f"  rows            {total:,}")
-        print(f"  distinct rows   {distinct:,}")
-        print(f"  duplicates      {total - distinct:,}")
-        if total and distinct:
-            print(f"  ratio           {total / distinct:.4f}x")
+        print(f"  rows                       {total:,}")
+        print(f"  identical in every column  {identical:,}"
+              f"   ({total - identical:,} exact duplicates)")
+        print(f"  distinct measurements      {physical:,}"
+              f"   ({total - physical:,} repeat ingests)")
+        if total and physical:
+            print(f"  ratio                      {total / physical:.4f}x")
+        print(f"  rows with no endf8         {incomplete:,}")
+        if total > physical > identical - 1:
+            print("\n  The repeats differ in their derived columns, so an exact-match pass")
+            print("  would remove almost none of them. The natural-key pass keeps the copy")
+            print("  carrying evaluation data.")
         print("\nnothing was changed (--dry-run)")
         return 0
 
@@ -120,7 +196,7 @@ def main():
     con = sqlite3.connect(target)
     try:
         print(f"deduplicating {target}")
-        before, after = deduplicate(con)
+        before, after = deduplicate(con, natural=not args.exact)
         if not args.keep_progress:
             reset_progress(con)
         print("  VACUUM ...")

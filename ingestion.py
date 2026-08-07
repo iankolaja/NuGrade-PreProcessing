@@ -119,6 +119,13 @@ def compute_channel_metrics(channel_data, evaluation, interpolated_xs, fallback_
     """
     result = channel_data.copy()
 
+    # EXFOR contains ~2,700 rows with a negative reported uncertainty. An uncertainty is a
+    # width and cannot be negative, so these are transcription errors in the source. Every
+    # downstream use already treats the value as a magnitude — fill_assumed_uncertainty
+    # takes abs, and chi-squared squares it — so the sign is not information, it is noise
+    # that the app's contract check then flags. Normalise it once, here.
+    result["dData"] = result["dData"].abs()
+
     assumed_fraction = assumed_relative_uncertainty(
         result["Data"], result["dData"], fallback_uncertainty
     )

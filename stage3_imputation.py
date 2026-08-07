@@ -143,7 +143,12 @@ def impute(measurements, reports, candidates, impute_index, config, emit):
 
         knn = pd.concat(neighbours, axis=1).T
         distances = composite_distance(query_features, knn, weights)
-        relative = knn["dData"] / knn["Data"]
+        # Magnitudes on both sides. EXFOR holds ~52k measurements with a negative cross
+        # section (background-subtraction artefacts), and a raw dData/Data ratio for one of
+        # those is negative — which propagates through the weighted mean into a negative
+        # adopted uncertainty. A relative uncertainty is a fraction of the signal's size.
+        relative = (knn["dData"].abs() / knn["Data"].abs()).replace(
+            [np.inf, -np.inf], np.nan)
         mean_relative = weighted_mean_relative_uncertainty(
             distances, relative, config.k_neighbors)
 

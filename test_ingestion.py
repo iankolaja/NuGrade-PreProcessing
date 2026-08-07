@@ -163,3 +163,50 @@ class TestComputeChannelMetrics:
         compute_channel_metrics(channel, "endf8", [1.0, 2.0, 3.0], fallback_uncertainty=0.2)
 
         assert "dData_assumed" not in channel.columns
+
+
+class TestNegativeReportedUncertainty:
+    """EXFOR carries ~2,700 rows with a negative reported uncertainty."""
+
+    def test_reported_uncertainty_is_normalised_to_a_magnitude(self):
+        """An uncertainty is a width. The sign is a transcription error in the source, and
+        every downstream use already treats it as a magnitude, so it is noise that the
+        app's contract check would otherwise flag."""
+        channel = pd.DataFrame({
+            "Energy": [1.0, 2.0], "dEnergy": [np.nan] * 2,
+            "Data": [1.0, 2.0], "dData": [-0.1, 0.2],
+        })
+
+        result = compute_channel_metrics(channel, "endf8", [1.0, 2.0],
+                                         fallback_uncertainty=0.2)
+
+        assert (result["dData"] >= 0).all()
+        assert result["dData"].iloc[0] == pytest.approx(0.1)
+
+    def test_the_magnitude_is_preserved_not_dropped(self):
+        channel = pd.DataFrame({"Energy": [1.0], "dEnergy": [np.nan],
+                                "Data": [5.0], "dData": [-0.75]})
+
+        result = compute_channel_metrics(channel, "endf8", [5.0],
+                                         fallback_uncertainty=0.2)
+
+        assert result["dData"].iloc[0] == pytest.approx(0.75)
+
+    def test_does_not_disturb_a_positive_uncertainty(self):
+        channel = pd.DataFrame({"Energy": [1.0], "dEnergy": [np.nan],
+                                "Data": [5.0], "dData": [0.3]})
+
+        result = compute_channel_metrics(channel, "endf8", [5.0],
+                                         fallback_uncertainty=0.2)
+
+        assert result["dData"].iloc[0] == pytest.approx(0.3)
+
+    def test_missing_uncertainties_are_still_filled(self):
+        channel = pd.DataFrame({"Energy": [1.0, 2.0], "dEnergy": [np.nan] * 2,
+                                "Data": [4.0, 4.0], "dData": [-0.4, np.nan]})
+
+        result = compute_channel_metrics(channel, "endf8", [4.0, 4.0],
+                                         fallback_uncertainty=0.25)
+
+        assert result["dData_assumed"].notna().all()
+        assert (result["dData_assumed"] > 0).all()

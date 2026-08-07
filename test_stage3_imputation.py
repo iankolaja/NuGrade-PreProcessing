@@ -201,3 +201,47 @@ class TestResult:
                                        progress=null_printer, write_test_db=False)
 
         assert any("no candidate reports" in w for w in result.warnings)
+
+
+class TestNegativeCrossSections:
+    """EXFOR holds ~52k measurements with a negative cross section, from background
+    subtraction. Those are legitimate data, but a naive relative uncertainty built from one
+    is negative and propagates into a negative adopted width."""
+
+    def _db_with_negative_neighbour(self, tmp_path):
+        import conftest
+
+        db = tmp_path / "nugrade_data.db"
+        con = sqlite3.connect(db)
+        measurements = conftest.make_measurements()
+        # Make the KNN candidate entry carry a negative cross section.
+        mask = measurements["EXFOR_Entry"] == "10001"
+        measurements.loc[mask, "Data"] = -measurements.loc[mask, "Data"]
+        measurements.to_sql("measurements", con, index=False)
+        conftest.make_reports().to_sql("report_embeddings", con, index=False)
+        conftest.make_entries().to_sql("entries", con, index=False)
+        conftest.make_subentries().to_sql("subentries", con, index=False)
+        con.commit()
+        con.close()
+        return db
+
+    def test_adopted_uncertainty_stays_positive(self, tmp_path):
+        db = self._db_with_negative_neighbour(tmp_path)
+        config = Config.resolved(output_dir=tmp_path, db_path=db, log_every=1000)
+
+        stage3_imputation.run(config, progress=null_printer, write_test_db=False)
+
+        measurements = read_table(db, "measurements")
+        negative = measurements[measurements["dData_adopted"] < 0]
+        assert negative.empty, (
+            f"{len(negative)} rows got a negative uncertainty from a negative-cross-section "
+            "neighbour")
+
+    def test_the_imputation_still_happens(self, tmp_path):
+        """Guarding the sign must not quietly turn every row into a fallback."""
+        db = self._db_with_negative_neighbour(tmp_path)
+        config = Config.resolved(output_dir=tmp_path, db_path=db, log_every=1000)
+
+        result = stage3_imputation.run(config, progress=null_printer, write_test_db=False)
+
+        assert result.counts["nlp_imputed"] > 0
