@@ -297,3 +297,61 @@ class TestPrerequisites:
 
         with pytest.raises(ConfigError, match="template sentences"):
             run_stage2(config)
+
+
+class TestSchemaMigration:
+    """A database created by an earlier version lacks columns this one writes."""
+
+    def _legacy_table(self, db_path):
+        """report_embeddings as the original notebook created it: no {category}_match."""
+        import sqlite3
+        con = sqlite3.connect(db_path)
+        pd.DataFrame([{
+            "EXFOR_Entry": "99999",
+            "detector_efficiency_max_sim": 0.5,
+            "dead_time_max_sim": 0.5,
+            "mean_embedding": b"\x00" * 64,
+        }]).to_sql("report_embeddings", con, index=False)
+        con.commit()
+        con.close()
+
+    def test_embeds_into_a_table_missing_the_new_columns(self, stage2_config):
+        """to_sql(append) cannot add columns, so this used to fail outright with
+        'table report_embeddings has no column named background_treatment_match'."""
+        self._legacy_table(stage2_config.db_path)
+
+        result = run_stage2(stage2_config)
+
+        assert result.counts["embedded"] == 2
+
+    def test_the_new_columns_are_added(self, stage2_config):
+        self._legacy_table(stage2_config.db_path)
+
+        run_stage2(stage2_config)
+
+        columns = table_columns(stage2_config.db_path, "report_embeddings")
+        assert "detector_efficiency_match" in columns
+
+    def test_existing_rows_survive_the_migration(self, stage2_config):
+        """Widening must not discard what is already there."""
+        self._legacy_table(stage2_config.db_path)
+
+        run_stage2(stage2_config)
+
+        reports = read_table(stage2_config.db_path, "report_embeddings")
+        assert "99999" in set(reports["EXFOR_Entry"])
+        legacy = reports[reports["EXFOR_Entry"] == "99999"].iloc[0]
+        assert legacy["detector_efficiency_max_sim"] == 0.5
+        assert pd.isna(legacy["detector_efficiency_match"])
+
+    def test_migration_is_idempotent(self, stage2_config):
+        self._legacy_table(stage2_config.db_path)
+        run_stage2(stage2_config)
+        first = table_columns(stage2_config.db_path, "report_embeddings")
+
+        fresh = Config.resolved(output_dir=stage2_config.output_dir,
+                                pdf_dir=stage2_config.pdf_dir,
+                                template_file=stage2_config.template_file, resume=False)
+        run_stage2(fresh)
+
+        assert table_columns(stage2_config.db_path, "report_embeddings") == first

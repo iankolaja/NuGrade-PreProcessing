@@ -166,7 +166,42 @@ def embed_report(entry, sentences, templates, embedder):
     return features, sentence_rows
 
 
-def persist_report(db_path, features, sentence_rows):
+def sqlite_type(value):
+    """The column type to declare for a Python value being added to an existing table."""
+    if isinstance(value, bytes):
+        return "BLOB"
+    if isinstance(value, bool) or isinstance(value, int):
+        return "INTEGER"
+    if isinstance(value, float):
+        return "REAL"
+    return "TEXT"
+
+
+def add_missing_columns(con, table, row, emit=None):
+    """Widen an existing table to hold every field in ``row``.
+
+    to_sql(if_exists="append") cannot add columns, so writing a row with a field the table
+    lacks fails outright. That happens whenever the pipeline starts recording something new
+    against a database an earlier version created — the {category}_match columns, which keep
+    the sentence responsible for each similarity score, are exactly such a case.
+
+    Adding the column is safe and non-destructive: existing rows get NULL for it.
+    """
+    existing = {r[1] for r in con.execute(f"PRAGMA table_info({table})")}
+    if not existing:
+        return []
+    added = []
+    for name, value in row.items():
+        if name not in existing:
+            con.execute(f'ALTER TABLE {table} ADD COLUMN "{name}" {sqlite_type(value)}')
+            added.append(name)
+    if added and emit:
+        emit(f"widened {table} with {len(added)} new column(s): {', '.join(added[:4])}"
+             + (" ..." if len(added) > 4 else ""))
+    return added
+
+
+def persist_report(db_path, features, sentence_rows, emit=None):
     """Append one report's rows, replacing any previous version of that entry.
 
     Deleting just this entry — rather than `if_exists='replace'` — is what makes the loop
@@ -178,8 +213,11 @@ def persist_report(db_path, features, sentence_rows):
         tables = {r[0] for r in con.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")}
         if "report_embeddings" in tables:
+            add_missing_columns(con, "report_embeddings", features, emit)
             con.execute("DELETE FROM report_embeddings WHERE EXFOR_Entry = ?", (entry,))
         if "sentence_embeddings" in tables:
+            add_missing_columns(con, "sentence_embeddings",
+                                sentence_rows.iloc[0].to_dict(), emit)
             con.execute("DELETE FROM sentence_embeddings WHERE EXFOR_Entry = ?", (entry,))
         pd.DataFrame([features]).to_sql("report_embeddings", con, if_exists="append",
                                         index=False)
@@ -257,7 +295,7 @@ def run(config, *, embedder=None, splitter=None, extract_text=None, progress=Non
 
         features, sentence_rows = embed_report(
             entry, report["sentences"], templates, embedder)
-        persist_report(config.db_path, features, sentence_rows)
+        persist_report(config.db_path, features, sentence_rows, emit=emit)
         counts["embedded"] += 1
         counts["sentences"] += len(sentence_rows)
         tracker.advance(suffix=f"{entry}: {report['kept_sentences']}/"
